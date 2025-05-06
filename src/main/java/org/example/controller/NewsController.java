@@ -88,7 +88,6 @@ public class NewsController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<?> createNews(@RequestBody News news) {
         try {
@@ -101,7 +100,6 @@ public class NewsController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping
     public ResponseEntity<?> editNews(@RequestBody News news) {
         try {
@@ -113,7 +111,6 @@ public class NewsController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @PutMapping(value = "/list")
     public ResponseEntity<?> editNewsList(@RequestBody List<News> newsList) {
         try {
@@ -127,7 +124,6 @@ public class NewsController {
         }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping
     public ResponseEntity<?> deleteNews(@RequestParam Integer id) {
         try {

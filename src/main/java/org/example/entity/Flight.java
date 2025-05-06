@@ -31,7 +31,7 @@ public class Flight extends BaseObject{
     @JoinColumn(name="SEAT_ID", nullable=false)
     private Seat seat;
 
-    @Column(name = "STATUS", nullable = false)
+    @Column(name = "SEAT_STATUS", nullable = false)
     private SeatStatus seatStatus;
 
     @Column(name = "DEPARTURE", nullable = false)

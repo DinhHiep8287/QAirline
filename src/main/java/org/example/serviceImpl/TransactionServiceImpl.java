@@ -47,7 +47,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Override
     public List<Transaction> findByStatusAndDueDateLessThan(TransactionStatusEnum status, Date dueDate) {
-        return transactionRepository.findByStatusAndDueDateLessThanAndIsDeletedFalse(status, dueDate);
+        return transactionRepository.findByStatusAndCreateDateLessThanAndIsDeletedFalse(status, dueDate);
     }
 
     @Override

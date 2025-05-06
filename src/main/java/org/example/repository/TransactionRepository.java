@@ -17,7 +17,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
 
     public Page<Transaction> findByIsDeletedFalse(Pageable pageable);
 
-    public List<Transaction> findByStatusAndDueDateLessThanAndIsDeletedFalse(TransactionStatusEnum status
+    public List<Transaction> findByStatusAndCreateDateLessThanAndIsDeletedFalse(TransactionStatusEnum status
             , Date dueDate);
 
     public Transaction findByIdAndIsDeletedFalse(Integer id);
