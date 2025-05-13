@@ -16,5 +16,5 @@ public interface PlaneService {
 
     void deletesById(Integer id);
 
-    void save(Plane plane);
+    Plane save(Plane plane);
 }

@@ -72,6 +72,18 @@ public class SeatController {
         }
     }
 
+    @PostMapping
+    public ResponseEntity<?> saveSeat(@RequestBody Seat seat) {
+        try {
+            seat.setId(null);
+            Seat saveSeat = seatService.save(seat);
+            return ResponseEntity.ok().body(saveSeat);
+        } catch (Exception e){
+            return ResponseEntity.internalServerError()
+                    .body("Server Error");
+        }
+    }
+
     @DeleteMapping
     public ResponseEntity<?> deleteById(@RequestParam Integer id){
         try {

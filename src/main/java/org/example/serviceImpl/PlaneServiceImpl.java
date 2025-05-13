@@ -42,7 +42,7 @@ public class PlaneServiceImpl implements PlaneService {
     }
 
     @Override
-    public void save(Plane plane) {
-        planeRepository.save(plane);
+    public Plane save(Plane plane) {
+        return planeRepository.save(plane);
     }
 }

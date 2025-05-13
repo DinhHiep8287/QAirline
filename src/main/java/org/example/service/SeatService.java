@@ -17,5 +17,5 @@ public interface SeatService {
 
     void deletesById(Integer id);
 
-    void save(Seat seat);
+    Seat save(Seat seat);
 }

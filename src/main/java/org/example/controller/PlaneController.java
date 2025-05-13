@@ -37,6 +37,18 @@ public class PlaneController {
         }
     }
 
+    @PostMapping
+    public ResponseEntity<?> savePlane(@RequestBody Plane plane){
+        try {
+            plane.setId(null);
+            Plane savePlane = planeService.save(plane);
+            return ResponseEntity.ok().body(savePlane);
+        } catch (Exception e){
+            return ResponseEntity.internalServerError()
+                    .body("Server Error");
+        }
+    }
+
     @GetMapping(value = "/id")
     public ResponseEntity<?> getById(@RequestParam Integer id){
         try {
