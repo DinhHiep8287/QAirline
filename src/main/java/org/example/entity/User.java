@@ -20,15 +20,15 @@ public class User extends BaseObject{
     @JsonIgnore
     private String password;
 
-    @Column(name = "NAME", nullable = false)
+    @Column(name = "NAME")
     private String name;
 
-    @Column(name = "ID_NUMBER", nullable = false)
+    @Column(name = "ID_NUMBER")
     private String IdNumber;
 
     @Column(name = "ROLE", nullable = false)
     private Role role = Role.USER;
 
     @Column(name = "IS_FORGOTTEN", nullable = false)
-    private boolean isForgotten;
+    private boolean isForgotten = false;
 }
