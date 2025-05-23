@@ -14,6 +14,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/v1/auth")
 public class AuthController {
@@ -58,6 +60,7 @@ public class AuthController {
             user.setEmail(signUpRequest.getEmail());
             user.setPassword(signUpRequest.getPassword());
             user.setName(signUpRequest.getEmail());
+            user.setIdNumber(UUID.randomUUID().toString());
 
             userService.saveUser(user);
 
