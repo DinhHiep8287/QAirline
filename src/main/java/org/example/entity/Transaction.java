@@ -16,7 +16,7 @@ import java.util.List;
 @Setter
 public class Transaction extends BaseObject{
     @ManyToOne
-    @JoinColumn(name = "USER_ID", nullable = false)
+    @JoinColumn(name = "USER_ID")
     private User user;
 
     @ManyToOne
