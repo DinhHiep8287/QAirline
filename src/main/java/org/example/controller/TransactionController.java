@@ -100,7 +100,7 @@ public class TransactionController {
                 return ResponseEntity.badRequest()
                         .body("Not found");
             } else {
-                return ResponseEntity.ok().body("Edited");
+                return ResponseEntity.ok().body(savedTransaction);
             }
         } catch (Exception e) {
             return ResponseEntity.internalServerError()
@@ -153,56 +153,21 @@ public class TransactionController {
         }
     }
 
-    @GetMapping(value = "/statusAndDueDate")
-    public ResponseEntity<?> getByStatusAndDueDate(@RequestParam TransactionStatusEnum status
-            , @RequestParam Date dueDate) {
+    @GetMapping(value = "/delay")
+    public ResponseEntity<?> sendDelayNoti(@RequestParam Integer flightId) {
         try {
-            List<Transaction> transaction = transactionService.findByStatusAndDueDateLessThan(status, dueDate);
-            if (ObjectUtils.isEmpty(transaction)) {
-                return ResponseEntity.badRequest()
-                        .body("Not found");
-            } else {
-                return ResponseEntity.ok().body(transaction);
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body("Server Error");
-        }
-    }
-
-    @PutMapping(value = "/lateTransaction")
-    public ResponseEntity<?> updateLateTransaction() {
-        try {
-            List<Transaction> transactions = transactionService
-                    .findByStatusAndDueDateLessThan(TransactionStatusEnum.ACCEPTED,
-                            new Date(new java.util.Date().getTime()));
-            if (ObjectUtils.isEmpty(transactions)) {
-                return ResponseEntity.badRequest()
-                        .body("Not found");
-            } else {
-                for (Transaction t : transactions) {
-                    t.setStatus(TransactionStatusEnum.LATE);
-                    transactionService.save(t);
-                }
-                return ResponseEntity.ok().body(transactions);
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body("Server Error");
-        }
-    }
-
-    @GetMapping(value = "/sendLateNoti")
-    public ResponseEntity<?> sendLateNoti() {
-        try {
-            List<Transaction> transactions = transactionService.findByStatus(TransactionStatusEnum.LATE);
+            List<Transaction> transactions = transactionService.findByFlightId(flightId);
             if (ObjectUtils.isEmpty(transactions)) {
                 return ResponseEntity.badRequest()
                         .body("Not found");
             } else {
                 EmailService emailService = new EmailService();
                 for (Transaction t : transactions) {
-                    emailService.sendNotification(t);
+                    if(!ObjectUtils.isEmpty(t.getUser())){
+                        t.setStatus(TransactionStatusEnum.DELAY);
+                        transactionService.save(t);
+                        emailService.sendNotification(t);
+                    }
                 }
                 return ResponseEntity.ok().body("Send successfully");
             }

@@ -19,8 +19,7 @@ public interface TransactionService {
 
     public void delete(Integer id);
 
-    public List<Transaction> findByStatusAndDueDateLessThan(TransactionStatusEnum status
-            , Date dueDate);
+    public List<Transaction> findByFlightId(Integer id);
 
     public List<Transaction> findByStatus(TransactionStatusEnum status);
 }

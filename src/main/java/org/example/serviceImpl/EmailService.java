@@ -89,14 +89,12 @@ public class EmailService {
         Message message = new MimeMessage(session);
         message.setFrom(new InternetAddress("namvnucn1@gmail.com"));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(transaction.getUser().getEmail()));
-        message.setSubject("Nhắc nhở thời hạn mượn sách");
+        message.setSubject("Nhắc nhở về chuyến bay số " + transaction.getFlight().getName());
 
-//        String msg = "Cuốn " + transaction.getBook().getTitle()
-//                + " mà bạn đã mượn vào ngày " + transaction.getIssueDate()
-//                + " đã quá hạn mượn là ngày " + transaction.getDueDate()
-//                + ". Vui lòng trả lại sách về thư viện!";
 
-        String msg = "";
+        String msg = "Chuyến bay có mã số" + transaction.getFlight().getName()
+                + " do gặp sự cố nên đã chuyển giờ khởi hành thành " + transaction.getFlight().getStartTime()
+                + ". Chúng tôi vô cùng xin lỗi và mong quý khách thông cảm cho sự cố lần này";
 
         MimeBodyPart mimeBodyPart = new MimeBodyPart();
         mimeBodyPart.setContent(msg, "text/html; charset=utf-8");
