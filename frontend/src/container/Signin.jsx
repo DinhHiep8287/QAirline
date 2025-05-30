@@ -23,7 +23,11 @@ const Signin = ({ signin, setSignin, setSignup }) => {
                 if (response.data.token) {
                     toast.success("Đăng nhập thành công!");
                     localStorage.setItem("token", response.data.token);
+                    localStorage.setItem("email", response.data.email);
+                    localStorage.setItem("username", response.data.username);
+                    localStorage.setItem("userId", response.data.id);
                     navigate('/');
+                    window.location.reload();
                     setSignin(false);
                 } else {
                     toast.error("Đăng nhập thất bại. Vui lòng kiểm tra lại.");

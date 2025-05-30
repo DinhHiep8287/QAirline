@@ -13,6 +13,7 @@ import {
 } from "./pages";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import Profile from "./pages/Profile.jsx";
 
 const App = () => {
     return (
@@ -21,6 +22,7 @@ const App = () => {
                 <Navbar />
                 <Routes>
                     <Route path="/" element={<Flights />} />
+                    <Route path="/profile" element={<Profile />} />
                     <Route path="/hotels" element={<Hotels />} />
                     <Route path="/packages" element={<Packages />} />
                     <Route path="/explore" element={<FlightExplore />} />
