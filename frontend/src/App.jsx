@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Outlet } from "react-router-dom";
 import "./App.css";
 import { Footer, Navbar } from "./components";
 import {
@@ -22,6 +22,16 @@ import AdminFlights from "./pages/admin/Flights";
 import Bookings from "./pages/admin/Bookings";
 import Delays from "./pages/admin/Delays";
 
+const ClientLayout = () => {
+    return (
+        <>
+            <Navbar />
+            <Outlet />
+            <Footer />
+        </>
+    );
+};
+
 const App = () => {
     return (
         <>
@@ -38,23 +48,17 @@ const App = () => {
                     </Route>
 
                     {/* Client routes */}
-                    <Route path="/" element={
-                        <>
-                            <Navbar />
-                            <Routes>
-                                <Route index element={<Flights />} />
-                                <Route path="profile" element={<Profile />} />
-                                <Route path="hotels" element={<Hotels />} />
-                                <Route path="packages" element={<Packages />} />
-                                <Route path="explore" element={<FlightExplore />} />
-                                <Route path="passenger-info" element={<PassengerInfo />} />
-                                <Route path="seat-selection" element={<SeatSelect />} />
-                                <Route path="payment" element={<Payment />} />
-                                <Route path="confirm" element={<Confirm />} />
-                            </Routes>
-                            <Footer />
-                        </>
-                    } />
+                    <Route path="/" element={<ClientLayout />}>
+                        <Route index element={<Flights />} />
+                        <Route path="profile" element={<Profile />} />
+                        <Route path="hotels" element={<Hotels />} />
+                        <Route path="packages" element={<Packages />} />
+                        <Route path="explore" element={<FlightExplore />} />
+                        <Route path="passenger-info" element={<PassengerInfo />} />
+                        <Route path="seat-selection" element={<SeatSelect />} />
+                        <Route path="payment" element={<Payment />} />
+                        <Route path="confirm" element={<Confirm />} />
+                    </Route>
                 </Routes>
                 <ToastContainer
                     position="bottom-center"
