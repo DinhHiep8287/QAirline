@@ -37,7 +37,7 @@ public class SeatServiceImpl implements SeatService {
     @Override
     public void deletesById(Integer id) {
         Seat seat = seatRepository.findById(String.valueOf(id)).get();
-        seat.setDeleted(false);
+        seat.setDeleted(true);
         seatRepository.save(seat);
     }
 
