@@ -21,7 +21,7 @@ public class TransactionController {
     TransactionService transactionService;
 
     @GetMapping(value = "/conditions")
-    public ResponseEntity<?> getByMemberId(@RequestParam String flightName
+    public ResponseEntity<?> getByConditions(@RequestParam String flightName
             , @RequestParam Date dateFrom, @RequestParam Date dateTo, @RequestParam TransactionStatusEnum status
             , @RequestParam Integer pageNum, @RequestParam Integer pageSize) {
         try {
