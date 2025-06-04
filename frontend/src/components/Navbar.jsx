@@ -1,10 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { MdOutlineClose } from 'react-icons/md';
 import { BiMenuAltLeft } from 'react-icons/bi';
-import { FaUserCircle, FaHistory, FaCog, FaSignOutAlt } from 'react-icons/fa';
+import { FaUserCircle, FaHistory, FaCog, FaSignOutAlt, FaPlane } from 'react-icons/fa';
 import { useState, useEffect, useRef } from "react";
 import Signin from "../container/Signin";
 import Signup from "../container/Signup";
+import "../styles/navbar.css";
 
 const UserDropdown = ({ userEmail, handleLogout, navigate }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -49,14 +50,18 @@ const UserDropdown = ({ userEmail, handleLogout, navigate }) => {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-all duration-200"
             >
                 <FaUserCircle className="w-5 h-5 text-[#605DEC]" />
-                <span className="text-gray-700">{userEmail}</span>
+                <span className="text-gray-700 font-medium">{userEmail}</span>
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+                <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg py-2 z-50 transform scale-in-center border border-gray-100">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-sm text-gray-500">Đăng nhập với</p>
+                        <p className="text-sm font-medium text-gray-900">{userEmail}</p>
+                    </div>
                     {menuItems.map((item, index) => (
                         <button
                             key={index}
@@ -64,10 +69,10 @@ const UserDropdown = ({ userEmail, handleLogout, navigate }) => {
                                 setIsOpen(false);
                                 item.onClick();
                             }}
-                            className={`w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-50 ${item.className || 'text-gray-700'}`}
+                            className={`w-full px-4 py-2 text-left flex items-center gap-3 hover:bg-gray-50 transition-colors ${item.className || 'text-gray-700'}`}
                         >
                             {item.icon}
-                            <span>{item.text}</span>
+                            <span className="font-medium">{item.text}</span>
                         </button>
                     ))}
                 </div>
@@ -100,69 +105,125 @@ const Navbar = () => {
 
     return (
         <>
-            <nav className="w-full flex flex-row items-center justify-between px-5 py-4 relative">
-                {/* Logo + menu mobile */}
-                <div className="flex items-center justify-center gap-3">
-                    <div className="relative md:hidden flex items-center">
-                        {toggle ? (
-                            <MdOutlineClose className="w-7 h-7 text-[#605DEC] cursor-pointer" onClick={() => setToggle(false)} />
-                        ) : (
-                            <BiMenuAltLeft className="w-7 h-7 text-[#605DEC] cursor-pointer" onClick={() => setToggle(true)} />
-                        )}
-                        {toggle && (
-                            <ul className="absolute w-40 z-10 h-fit bg-[#FFFFFF] shadow-xl top-14 left-0 text-[#7C8DB0] flex flex-col gap-2 items-start p-4 scaleUp">
-                                <Link to="/" className={`text-base hover:text-[#605DEC] ${isActive("/") && "text-[#605DEC]"}`}>
-                                    <li>Chuyến bay</li>
-                                </Link>
-                                <Link to="/hotels" className={`text-base hover:text-[#605DEC] ${isActive("/hotels") && "text-[#605DEC]"}`}>
-                                    <li>Khách sạn</li>
-                                </Link>
-                                <Link to="/packages" className={`text-base hover:text-[#605DEC] ${isActive("/packages") && "text-[#605DEC]"}`}>
-                                    <li>Gói du lịch</li>
-                                </Link>
-                            </ul>
+            <nav className="bg-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center justify-between h-16">
+                        {/* Logo + menu mobile */}
+                        <div className="flex items-center">
+                            <div className="flex-shrink-0 flex items-center gap-2">
+                                <FaPlane className="w-8 h-8 text-[#605DEC]" />
+                                <span className="text-xl font-bold text-[#605DEC] tracking-tight">QAIRLINE</span>
+                            </div>
+                            <div className="hidden md:block ml-10">
+                                <div className="flex items-center space-x-8">
+                                    <Link to="/" 
+                                        className={`relative px-3 py-2 text-base font-medium transition-colors duration-200
+                                        ${isActive("/") 
+                                            ? "text-[#605DEC]" 
+                                            : "text-gray-600 hover:text-[#605DEC]"}`}
+                                    >
+                                        <span>Chuyến bay</span>
+                                        {isActive("/") && (
+                                            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#605DEC] transform scale-x-100 transition-transform duration-200"></span>
+                                        )}
+                                    </Link>
+                                    <Link to="/hotels" 
+                                        className={`relative px-3 py-2 text-base font-medium transition-colors duration-200
+                                        ${isActive("/hotels") 
+                                            ? "text-[#605DEC]" 
+                                            : "text-gray-600 hover:text-[#605DEC]"}`}
+                                    >
+                                        <span>Khách sạn</span>
+                                        {isActive("/hotels") && (
+                                            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#605DEC] transform scale-x-100 transition-transform duration-200"></span>
+                                        )}
+                                    </Link>
+                                    <Link to="/packages" 
+                                        className={`relative px-3 py-2 text-base font-medium transition-colors duration-200
+                                        ${isActive("/packages") 
+                                            ? "text-[#605DEC]" 
+                                            : "text-gray-600 hover:text-[#605DEC]"}`}
+                                    >
+                                        <span>Gói du lịch</span>
+                                        {isActive("/packages") && (
+                                            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#605DEC] transform scale-x-100 transition-transform duration-200"></span>
+                                        )}
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Mobile menu button */}
+                        <div className="md:hidden">
+                            <button
+                                onClick={() => setToggle(!toggle)}
+                                className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-[#605DEC] hover:bg-gray-100 transition-colors duration-200"
+                            >
+                                {toggle ? (
+                                    <MdOutlineClose className="w-6 h-6" />
+                                ) : (
+                                    <BiMenuAltLeft className="w-6 h-6" />
+                                )}
+                            </button>
+                        </div>
+
+                        {/* Desktop nav items */}
+                        <div className="hidden md:block">
+                            {userEmail ? (
+                                <UserDropdown userEmail={userEmail} handleLogout={handleLogout} navigate={navigate} />
+                            ) : (
+                                <button
+                                    onClick={() => setSignin(true)}
+                                    className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-[#605DEC] hover:bg-[#4B48BF] transition-colors duration-200 shadow-sm hover:shadow-md"
+                                >
+                                    Đăng nhập
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile menu */}
+                <div className={`md:hidden transition-all duration-300 ease-in-out ${toggle ? 'max-h-screen' : 'max-h-0 overflow-hidden'}`}>
+                    <div className="px-2 pt-2 pb-3 space-y-1 bg-white border-t border-gray-200">
+                        <Link to="/"
+                            className={`block px-3 py-2 rounded-md text-base font-medium ${
+                                isActive("/") 
+                                    ? "text-[#605DEC] bg-[#F6F6FE]" 
+                                    : "text-gray-600 hover:text-[#605DEC] hover:bg-gray-50"
+                            }`}
+                        >
+                            Chuyến bay
+                        </Link>
+                        <Link to="/hotels"
+                            className={`block px-3 py-2 rounded-md text-base font-medium ${
+                                isActive("/hotels") 
+                                    ? "text-[#605DEC] bg-[#F6F6FE]" 
+                                    : "text-gray-600 hover:text-[#605DEC] hover:bg-gray-50"
+                            }`}
+                        >
+                            Khách sạn
+                        </Link>
+                        <Link to="/packages"
+                            className={`block px-3 py-2 rounded-md text-base font-medium ${
+                                isActive("/packages") 
+                                    ? "text-[#605DEC] bg-[#F6F6FE]" 
+                                    : "text-gray-600 hover:text-[#605DEC] hover:bg-gray-50"
+                            }`}
+                        >
+                            Gói du lịch
+                        </Link>
+                        {!userEmail && (
+                            <div className="px-3 py-2">
+                                <button
+                                    onClick={() => setSignin(true)}
+                                    className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-[#605DEC] hover:bg-[#4B48BF] transition-colors duration-200"
+                                >
+                                    Đăng nhập
+                                </button>
+                            </div>
                         )}
                     </div>
-                    <span className="text-xl font-bold text-[#605DEC]">QAIRLINE</span>
-                </div>
-
-                {/* Nút đăng nhập hoặc user (mobile) */}
-                <div className="block md:hidden">
-                    {userEmail ? (
-                        <UserDropdown userEmail={userEmail} handleLogout={handleLogout} navigate={navigate} />
-                    ) : (
-                        <button
-                            className="bg-[#605DEC] py-2 px-4 rounded-[5px] border-2 border-[#605DEC] text-base text-white hover:text-[#605DEC] hover:bg-white transition-all duration-200"
-                            onClick={() => setSignin(true)}
-                        >
-                            Đăng nhập
-                        </button>
-                    )}
-                </div>
-
-                {/* Menu desktop */}
-                <div className="hidden md:flex items-center space-x-8">
-                    <ul className="flex items-center space-x-8 text-[#7C8DB0]">
-                        <Link to="/" className={`text-base hover:text-[#605DEC] ${isActive("/") && "text-[#605DEC]"}`}>
-                            <li>Chuyến bay</li>
-                        </Link>
-                        <Link to="/hotels" className={`text-base hover:text-[#605DEC] ${isActive("/hotels") && "text-[#605DEC]"}`}>
-                            <li>Khách sạn</li>
-                        </Link>
-                        <Link to="/packages" className={`text-base hover:text-[#605DEC] ${isActive("/packages") && "text-[#605DEC]"}`}>
-                            <li>Gói du lịch</li>
-                        </Link>
-                    </ul>
-                    {userEmail ? (
-                        <UserDropdown userEmail={userEmail} handleLogout={handleLogout} navigate={navigate} />
-                    ) : (
-                        <button
-                            className="bg-[#605DEC] py-2 px-4 rounded-[5px] border-2 border-[#605DEC] text-base text-white hover:text-[#605DEC] hover:bg-white transition-all duration-200"
-                            onClick={() => setSignin(true)}
-                        >
-                            Đăng nhập
-                        </button>
-                    )}
                 </div>
             </nav>
 
