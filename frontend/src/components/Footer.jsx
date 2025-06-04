@@ -1,52 +1,143 @@
-import { appStore, facebook, googlePlay, instagram, twitter } from "../assets/icons";
+import { FaFacebookF, FaTwitter, FaInstagram, FaLinkedinIn } from 'react-icons/fa';
+import { FaPlane } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+
+const FooterSection = ({ title, links }) => (
+  <div className="flex flex-col space-y-4">
+    <h2 className="text-[#1A1D1F] font-semibold text-lg">{title}</h2>
+    <ul className="space-y-3">
+      {links.map((link, index) => (
+        <li key={index}>
+          <Link 
+            to={link.url} 
+            className="text-gray-500 hover:text-[#605DEC] transition-colors duration-200 text-sm"
+          >
+            {link.text}
+          </Link>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
+
+const SocialButton = ({ icon, href, label }) => (
+  <a
+    href={href}
+    target="_blank"
+    rel="noopener noreferrer"
+    aria-label={label}
+    className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 text-gray-600 hover:bg-[#605DEC] hover:text-white transition-all duration-200"
+  >
+    {icon}
+  </a>
+);
 
 const Footer = () => {
+  const sections = [
+    {
+      title: "Giới thiệu",
+      links: [
+        { text: "Về QAIRLINE", url: "/about" },
+        { text: "Cách hoạt động", url: "/how-it-works" },
+        { text: "Cơ hội nghề nghiệp", url: "/careers" },
+        { text: "Blog", url: "/blog" },
+        { text: "Báo chí", url: "/press" },
+        { text: "Diễn đàn", url: "/forum" }
+      ]
+    },
+    {
+      title: "Đối tác",
+      links: [
+        { text: "Chương trình đối tác", url: "/partners" },
+        { text: "Chương trình liên kết", url: "/affiliates" },
+        { text: "Đối tác kỹ thuật", url: "/tech-partners" },
+        { text: "Khuyến mãi & sự kiện", url: "/promotions" },
+        { text: "Tích hợp hệ thống", url: "/integration" },
+        { text: "Cộng đồng", url: "/community" },
+        { text: "Chương trình khách hàng thân thiết", url: "/loyalty" }
+      ]
+    },
+    {
+      title: "Hỗ trợ",
+      links: [
+        { text: "Trung tâm trợ giúp", url: "/help" },
+        { text: "Liên hệ", url: "/contact" },
+        { text: "Chính sách bảo mật", url: "/privacy" },
+        { text: "Điều khoản dịch vụ", url: "/terms" },
+        { text: "An toàn & tin cậy", url: "/trust" },
+        { text: "Khả năng tiếp cận", url: "/accessibility" }
+      ]
+    }
+  ];
+
   return (
-      <>
-        <div className="mt-40 flex flex-col gap-5 px-8">
-          <div className="flex justify-between items-start flex-col md:flex-row gap-7">
-            <div className="flex justify-start items-start">
-              <h1 className="text-[#605DEC] font-bold text-2xl">QAIRLINE</h1>
+    <footer className="bg-white mt-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="py-12 border-b border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
+            {/* Logo and description */}
+            <div className="lg:col-span-2">
+              <div className="flex items-center gap-2">
+                <FaPlane className="w-8 h-8 text-[#605DEC]" />
+                <span className="text-2xl font-bold text-[#605DEC] tracking-tight">QAIRLINE</span>
+              </div>
+              <p className="mt-4 text-gray-500 text-sm leading-6">
+                QAIRLINE là nền tảng đặt vé máy bay trực tuyến hàng đầu, cung cấp trải nghiệm đặt vé thuận tiện và an toàn với nhiều lựa chọn chuyến bay từ các hãng hàng không uy tín.
+              </p>
+              <div className="mt-6 flex space-x-4">
+                <SocialButton
+                  icon={<FaFacebookF size={18} />}
+                  href="https://facebook.com"
+                  label="Facebook"
+                />
+                <SocialButton
+                  icon={<FaTwitter size={18} />}
+                  href="https://twitter.com"
+                  label="Twitter"
+                />
+                <SocialButton
+                  icon={<FaInstagram size={18} />}
+                  href="https://instagram.com"
+                  label="Instagram"
+                />
+                <SocialButton
+                  icon={<FaLinkedinIn size={18} />}
+                  href="https://linkedin.com"
+                  label="LinkedIn"
+                />
+              </div>
             </div>
 
-            <ul className="flex flex-col items-start justify-start gap-3">
-              <h2 className="text-[#6E7491] font-bold text-lg">Giới thiệu</h2>
-              <li className="footerLi">Về QAIRLINE</li>
-              <li className="footerLi">Cách hoạt động</li>
-              <li className="footerLi">Cơ hội nghề nghiệp</li>
-              <li className="footerLi">Blog</li>
-              <li className="footerLi">Báo chí</li>
-              <li className="footerLi">Diễn đàn</li>
-            </ul>
-
-            <ul className="flex flex-col items-start justify-start gap-3">
-              <h2 className="text-[#6E7491] font-bold text-lg">Đối tác</h2>
-              <li className="footerLi">Chương trình đối tác</li>
-              <li className="footerLi">Chương trình liên kết</li>
-              <li className="footerLi">Đối tác kỹ thuật</li>
-              <li className="footerLi">Khuyến mãi & sự kiện</li>
-              <li className="footerLi">Tích hợp hệ thống</li>
-              <li className="footerLi">Cộng đồng</li>
-              <li className="footerLi">Chương trình khách hàng thân thiết</li>
-            </ul>
-
-            <ul className="flex flex-col items-start justify-start gap-3">
-              <h2 className="text-[#6E7491] font-bold text-lg">Hỗ trợ</h2>
-              <li className="footerLi">Trung tâm trợ giúp</li>
-              <li className="footerLi">Liên hệ</li>
-              <li className="footerLi">Chính sách bảo mật</li>
-              <li className="footerLi">Điều khoản dịch vụ</li>
-              <li className="footerLi">An toàn & tin cậy</li>
-              <li className="footerLi">Khả năng tiếp cận</li>
-            </ul>
-
-          </div>
-
-          <div className="border-t-2 border-[#CBD4E6] py-8 flex justify-between items-center">
-            <p className="text-[#7C8DB0] text-sm sm:text-base">&copy; 2023 QAIRLINE. Bản quyền đã được bảo hộ.</p>
+            {/* Footer sections */}
+            {sections.map((section, index) => (
+              <FooterSection
+                key={index}
+                title={section.title}
+                links={section.links}
+              />
+            ))}
           </div>
         </div>
-      </>
+
+        {/* Bottom bar */}
+        <div className="py-6 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+          <div className="text-sm text-gray-500">
+            &copy; {new Date().getFullYear()} QAIRLINE. Bản quyền đã được bảo hộ.
+          </div>
+          <div className="flex space-x-6">
+            <Link to="/privacy" className="text-sm text-gray-500 hover:text-[#605DEC] transition-colors duration-200">
+              Chính sách bảo mật
+            </Link>
+            <Link to="/terms" className="text-sm text-gray-500 hover:text-[#605DEC] transition-colors duration-200">
+              Điều khoản sử dụng
+            </Link>
+            <Link to="/sitemap" className="text-sm text-gray-500 hover:text-[#605DEC] transition-colors duration-200">
+              Sơ đồ trang
+            </Link>
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 };
 
