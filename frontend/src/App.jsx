@@ -14,6 +14,7 @@ import {
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Profile from "./pages/Profile.jsx";
+import BookingHistory from "./pages/BookingHistory.jsx";
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import News from "./pages/admin/News";
@@ -51,6 +52,7 @@ const App = () => {
                     <Route path="/" element={<ClientLayout />}>
                         <Route index element={<Flights />} />
                         <Route path="profile" element={<Profile />} />
+                        <Route path="booking-history" element={<BookingHistory />} />
                         <Route path="hotels" element={<Hotels />} />
                         <Route path="packages" element={<Packages />} />
                         <Route path="explore" element={<FlightExplore />} />

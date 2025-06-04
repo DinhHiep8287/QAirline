@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { MdOutlineClose } from 'react-icons/md';
 import { BiMenuAltLeft } from 'react-icons/bi';
-import { FaUserCircle, FaHistory, FaCog, FaSignOutAlt, FaPlane } from 'react-icons/fa';
+import { FaUserCircle, FaHistory, FaSignOutAlt, FaPlane } from 'react-icons/fa';
 import { useState, useEffect, useRef } from "react";
 import Signin from "../container/Signin";
 import Signup from "../container/Signup";
@@ -32,11 +32,6 @@ const UserDropdown = ({ userEmail, handleLogout, navigate }) => {
             icon: <FaHistory className="w-5 h-5" />,
             text: 'Lịch sử đặt vé',
             onClick: () => navigate('/booking-history')
-        },
-        {
-            icon: <FaCog className="w-5 h-5" />,
-            text: 'Cài đặt',
-            onClick: () => navigate('/settings')
         },
         {
             icon: <FaSignOutAlt className="w-5 h-5" />,
@@ -213,29 +208,49 @@ const Navbar = () => {
                         >
                             Gói du lịch
                         </Link>
-                        {!userEmail && (
-                            <div className="px-3 py-2">
-                                <button
-                                    onClick={() => setSignin(true)}
-                                    className="w-full flex items-center justify-center px-4 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-[#605DEC] hover:bg-[#4B48BF] transition-colors duration-200"
-                                >
-                                    Đăng nhập
-                                </button>
+                        {userEmail ? (
+                            <div className="pt-4 pb-3 border-t border-gray-200">
+                                <div className="flex items-center px-3">
+                                    <div className="flex-shrink-0">
+                                        <FaUserCircle className="h-10 w-10 text-[#605DEC]" />
+                                    </div>
+                                    <div className="ml-3">
+                                        <div className="text-base font-medium text-gray-800">{userEmail}</div>
+                                    </div>
+                                </div>
+                                <div className="mt-3 space-y-1">
+                                    <Link to="/profile"
+                                        className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[#605DEC] hover:bg-gray-50"
+                                    >
+                                        Thông tin cá nhân
+                                    </Link>
+                                    <Link to="/booking-history"
+                                        className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-[#605DEC] hover:bg-gray-50"
+                                    >
+                                        Lịch sử đặt vé
+                                    </Link>
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    >
+                                        Đăng xuất
+                                    </button>
+                                </div>
                             </div>
+                        ) : (
+                            <button
+                                onClick={() => setSignin(true)}
+                                className="w-full mt-4 px-4 py-2 text-base font-medium text-white bg-[#605DEC] hover:bg-[#4B48BF] rounded-lg transition-colors duration-200"
+                            >
+                                Đăng nhập
+                            </button>
                         )}
                     </div>
                 </div>
             </nav>
 
-            {/* Form đăng nhập */}
-            {signin && (
-                <Signin signin={signin} setSignin={setSignin} setSignup={setSignup} />
-            )}
-
-            {/* Form đăng ký */}
-            {signup && (
-                <Signup signup={signup} setSignup={setSignup} setSignin={setSignin} />
-            )}
+            {signin && <Signin setSignin={setSignin} setSignup={setSignup} />}
+            {signup && <Signup setSignup={setSignup} setSignin={setSignin} />}
         </>
     );
 };
