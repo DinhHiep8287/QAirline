@@ -27,13 +27,6 @@ public class Flight extends BaseObject{
     @Column(name = "STATUS", nullable = false)
     private FlightStatus status;
 
-    @ManyToOne
-    @JoinColumn(name="SEAT_ID", nullable=false)
-    private Seat seat;
-
-    @Column(name = "SEAT_STATUS", nullable = false)
-    private SeatStatus seatStatus;
-
     @Column(name = "DEPARTURE", nullable = false)
     private String departure;
 

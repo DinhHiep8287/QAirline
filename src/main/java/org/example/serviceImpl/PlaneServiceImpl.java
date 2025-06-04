@@ -37,7 +37,7 @@ public class PlaneServiceImpl implements PlaneService {
     @Override
     public void deletesById(Integer id) {
         Plane plane = planeRepository.findById(String.valueOf(id)).get();
-        plane.setDeleted(false);
+        plane.setDeleted(true);
         planeRepository.save(plane);
     }
 
