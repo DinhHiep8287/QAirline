@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import java.sql.Date;
 import java.util.List;
 
+@RestController
+@RequestMapping("/api/v1/flight")
 public class FlightController {
     @Autowired
     FlightService flightService;
