@@ -1,6 +1,6 @@
 import { FlightDeals, Hero, Testimonials } from "../components"
 import Places from "../components/Places"
-
+import News from "../components/News"
 
 const Flights = () => {
   return (
@@ -13,6 +13,9 @@ const Flights = () => {
     </div>
     <div className="mt-[60px]">
      <Places/>
+    </div>
+    <div className="mt-[60px]">
+     <News/>
     </div>
     <div className="mt-[90px]">
     <Testimonials/>

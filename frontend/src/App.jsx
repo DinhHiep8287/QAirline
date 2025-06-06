@@ -18,6 +18,7 @@ import BookingHistory from "./pages/BookingHistory.jsx";
 import AdminLayout from "./components/admin/AdminLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import News from "./pages/admin/News";
+import NewsDetail from "./pages/NewsDetail";
 import Planes from "./pages/admin/Planes";
 import AdminFlights from "./pages/admin/Flights";
 import Bookings from "./pages/admin/Bookings";
@@ -60,6 +61,7 @@ const App = () => {
                         <Route path="seat-selection" element={<SeatSelect />} />
                         <Route path="payment" element={<Payment />} />
                         <Route path="confirm" element={<Confirm />} />
+                        <Route path="news/:id" element={<NewsDetail />} />
                     </Route>
                 </Routes>
                 <ToastContainer
