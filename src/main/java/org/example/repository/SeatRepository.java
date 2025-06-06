@@ -9,5 +9,5 @@ public interface SeatRepository extends JpaRepository<Seat, String> {
     Seat findByIdAndIsDeletedFalse(Integer id);
     Boolean existsByIdAndIsDeletedFalse(Integer id);
     Page<Seat> findByIsDeletedFalse(Pageable pageable);
-    Page<Seat> findByNameContainsAndPlaneIdAndHaveWindowAndDeletedFalse(String name, Integer planeId, Boolean haveWindow, Pageable pageable);
+    Page<Seat> findByNameContainsAndHaveWindowAndDeletedFalse(String name, Boolean haveWindow, Pageable pageable);
 }

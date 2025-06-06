@@ -17,10 +17,6 @@ public class Seat extends BaseObject{
     @Column(name = "NAME", nullable = false)
     private String name;
 
-    @ManyToOne
-    @JoinColumn(name="PLANE_ID", nullable=false)
-    private Plane plane;
-
     @Column(name = "SEAT_TYPE", nullable = false)
     private SeatType type;
 
@@ -32,4 +28,7 @@ public class Seat extends BaseObject{
 
     @Column(name = "SUMMARY")
     private String summary;
+
+    @Column(name = "PRICE", nullable = false)
+    private String price;
 }

@@ -18,6 +18,10 @@ public class Flight extends BaseObject{
     @Column(name = "NAME", nullable = false)
     private String name;
 
+    @ManyToOne
+    @JoinColumn(name="PLANE_ID", nullable=false)
+    private Plane plane;
+
     @Column(name = "START_TIME", nullable = false)
     private Date startTime;
 
