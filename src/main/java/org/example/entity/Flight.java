@@ -38,11 +38,11 @@ public class Flight extends BaseObject{
     private String departureCode;
 
     @Column(name = "ARRIVAL", nullable = false)
-    private Date arrival;
+    private String arrival;
 
     @Column(name = "ARRIVAL_CODE", nullable = false)
-    private Date arrivalCode;
+    private String arrivalCode;
 
     @Column(name = "GATE", nullable = false)
-    private Date gate;
+    private String gate;
 }

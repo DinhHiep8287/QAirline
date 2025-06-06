@@ -4,30 +4,73 @@ import { getFlights, createFlight, updateFlight, deleteFlight, getPlanes } from 
 import { toast } from 'react-toastify';
 
 const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
-  console.log('FlightForm planes prop:', planes);
-  console.log('FlightForm planes type:', typeof planes);
-  console.log('FlightForm planes is array:', Array.isArray(planes));
-  console.log('FlightForm planes length:', planes?.length);
-  
+  console.log('Initial planes:', planes);
+  console.log('Initial data:', initialData);
+
   const [formData, setFormData] = useState({
-    flightNumber: '',
+    name: '',
     planeId: '',
+    startTime: '',
+    endTime: '',
+    status: 'OPEN',
     departure: '',
-    destination: '',
-    departureTime: '',
-    arrivalTime: '',
-    basePrice: '',
+    departureCode: '',
+    arrival: '',
+    arrivalCode: '',
+    gate: '',
     ...initialData
   });
 
-  console.log('FlightForm current formData:', formData);
+  useEffect(() => {
+    console.log('Current formData:', formData);
+  }, [formData]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({
-      ...formData,
-      basePrice: parseFloat(formData.basePrice),
-      planeId: parseInt(formData.planeId)
+    // Validate required fields
+    if (!formData.name || !formData.planeId || !formData.startTime || !formData.endTime || 
+        !formData.departure || !formData.departureCode || !formData.arrival || !formData.arrivalCode) {
+      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+      return;
+    }
+
+    // Find the selected plane object
+    const selectedPlane = planes.find(p => p.id === Number(formData.planeId));
+    if (!selectedPlane) {
+      toast.error('Không tìm thấy thông tin tàu bay');
+      return;
+    }
+
+    // Prepare data according to backend structure
+    const submitData = {
+      name: formData.name,
+      plane: selectedPlane,
+      startTime: formData.startTime,
+      endTime: formData.endTime,
+      status: formData.status,
+      departure: formData.departure,
+      departureCode: formData.departureCode,
+      arrival: formData.arrival,
+      arrivalCode: formData.arrivalCode,
+      gate: formData.gate || '',
+      createBy: 'admin',
+      updateBy: 'admin'
+    };
+
+    console.log('Submitting flight data:', submitData);
+    onSubmit(submitData);
+  };
+
+  const handlePlaneChange = (e) => {
+    const selectedPlaneId = e.target.value;
+    console.log('Selected plane ID:', selectedPlaneId, 'Type:', typeof selectedPlaneId);
+    setFormData(prev => {
+      const newData = {
+        ...prev,
+        planeId: selectedPlaneId
+      };
+      console.log('New form data after plane change:', newData);
+      return newData;
     });
   };
 
@@ -42,8 +85,8 @@ const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
           <label className="block text-sm font-medium text-gray-700">Số hiệu chuyến bay</label>
           <input
             type="text"
-            value={formData.flightNumber}
-            onChange={(e) => setFormData({ ...formData, flightNumber: e.target.value })}
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             required
           />
@@ -53,20 +96,61 @@ const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
           <label className="block text-sm font-medium text-gray-700">Tàu bay</label>
           <select
             value={formData.planeId || ''}
-            onChange={(e) => setFormData({ ...formData, planeId: e.target.value })}
+            onChange={handlePlaneChange}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             required
           >
             <option value="">Chọn tàu bay</option>
             {planes && planes.length > 0 ? (
-              planes.map(plane => (
-                <option key={plane.id} value={plane.id}>
-                  {plane.name} - {plane.producer}
-                </option>
-              ))
+              planes.map(plane => {
+                console.log('Rendering plane option:', plane);
+                return (
+                  <option key={plane.id} value={plane.id}>
+                    {plane.name} - {plane.producer}
+                  </option>
+                );
+              })
             ) : (
               <option value="" disabled>Không có tàu bay</option>
             )}
+          </select>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Giờ khởi hành</label>
+            <input
+              type="datetime-local"
+              value={formData.startTime}
+              onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Giờ đến</label>
+            <input
+              type="datetime-local"
+              value={formData.endTime}
+              onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Trạng thái</label>
+          <select
+            value={formData.status}
+            onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            required
+          >
+            <option value="OPEN">Mở bán</option>
+            <option value="CLOSED">Đóng bán</option>
+            <option value="CANCELLED">Đã hủy</option>
+            <option value="COMPLETED">Đã hoàn thành</option>
           </select>
         </div>
 
@@ -82,11 +166,11 @@ const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Điểm đến</label>
+            <label className="block text-sm font-medium text-gray-700">Mã sân bay đi</label>
             <input
               type="text"
-              value={formData.destination}
-              onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+              value={formData.departureCode}
+              onChange={(e) => setFormData({ ...formData, departureCode: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
             />
@@ -95,21 +179,21 @@ const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Giờ khởi hành</label>
+            <label className="block text-sm font-medium text-gray-700">Điểm đến</label>
             <input
-              type="datetime-local"
-              value={formData.departureTime}
-              onChange={(e) => setFormData({ ...formData, departureTime: e.target.value })}
+              type="text"
+              value={formData.arrival}
+              onChange={(e) => setFormData({ ...formData, arrival: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700">Giờ đến</label>
+            <label className="block text-sm font-medium text-gray-700">Mã sân bay đến</label>
             <input
-              type="datetime-local"
-              value={formData.arrivalTime}
-              onChange={(e) => setFormData({ ...formData, arrivalTime: e.target.value })}
+              type="text"
+              value={formData.arrivalCode}
+              onChange={(e) => setFormData({ ...formData, arrivalCode: e.target.value })}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
               required
             />
@@ -117,20 +201,13 @@ const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Giá cơ bản</label>
-          <div className="mt-1 relative rounded-md shadow-sm">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-500 sm:text-sm">₫</span>
-            </div>
-            <input
-              type="number"
-              value={formData.basePrice}
-              onChange={(e) => setFormData({ ...formData, basePrice: e.target.value })}
-              className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              placeholder="0"
-              required
-            />
-          </div>
+          <label className="block text-sm font-medium text-gray-700">Cổng</label>
+          <input
+            type="text"
+            value={formData.gate || ''}
+            onChange={(e) => setFormData({ ...formData, gate: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          />
         </div>
 
         <button
@@ -158,13 +235,16 @@ const Flights = () => {
       setLoading(true);
       const [flightsResponse, planesResponse] = await Promise.all([
         getFlights(page).catch(error => {
+          console.error('Error fetching flights:', error);
           if (error.response && error.response.status === 400) {
-            return { data: { content: [], totalElements: 0 } };
+            return { data: [] };
           }
           throw error;
         }),
         getPlanes()
       ]);
+      
+      console.log('Flights response:', flightsResponse); // Debug log
       
       // Kiểm tra và xử lý dữ liệu planes
       if (!planesResponse.data || planesResponse.data.length === 0) {
@@ -175,13 +255,15 @@ const Flights = () => {
       }
 
       // Kiểm tra và xử lý dữ liệu flights
-      if (!flightsResponse.data || !flightsResponse.data.content || flightsResponse.data.content.length === 0) {
+      if (!flightsResponse?.data) {
+        console.log('No flights data found - invalid response structure'); // Debug log
         setFlights([]);
         setTotalPages(0);
         toast.warning('Chưa có dữ liệu chuyến bay');
       } else {
-        setFlights(flightsResponse.data.content);
-        setTotalPages(Math.ceil(flightsResponse.data.totalElements / 10));
+        console.log('Setting flights data:', flightsResponse.data); // Debug log
+        setFlights(Array.isArray(flightsResponse.data) ? flightsResponse.data : [flightsResponse.data]);
+        setTotalPages(Math.ceil((Array.isArray(flightsResponse.data) ? flightsResponse.data.length : 1) / 10));
       }
     } catch (error) {
       console.error('Error details:', error);
@@ -305,21 +387,33 @@ const Flights = () => {
                           <th className="text-left py-3 px-4 border-b">Điểm đi</th>
                           <th className="text-left py-3 px-4 border-b">Điểm đến</th>
                           <th className="text-left py-3 px-4 border-b">Khởi hành</th>
-                          <th className="text-right py-3 px-4 border-b">Giá</th>
+                          <th className="text-left py-3 px-4 border-b">Trạng thái</th>
                           <th className="text-right py-3 px-4 border-b">Thao tác</th>
                         </tr>
                       </thead>
                       <tbody>
                         {flights.map((item) => (
                           <tr key={item.id} className="hover:bg-gray-50">
-                            <td className="py-3 px-4 border-b">{item.flightNumber}</td>
+                            <td className="py-3 px-4 border-b">{item.name}</td>
                             <td className="py-3 px-4 border-b">
-                              {planes.find(p => p.id === item.planeId)?.name || 'N/A'}
+                              {item.plane?.name || 'N/A'}
                             </td>
                             <td className="py-3 px-4 border-b">{item.departure}</td>
-                            <td className="py-3 px-4 border-b">{item.destination}</td>
-                            <td className="py-3 px-4 border-b">{formatDateTime(item.departureTime)}</td>
-                            <td className="py-3 px-4 border-b text-right">{formatPrice(item.basePrice)}</td>
+                            <td className="py-3 px-4 border-b">{item.arrival}</td>
+                            <td className="py-3 px-4 border-b">{formatDateTime(item.startTime)}</td>
+                            <td className="py-3 px-4 border-b">
+                              <span className={`px-2 py-1 rounded-full text-xs ${
+                                item.status === 'OPEN' ? 'bg-green-100 text-green-800' :
+                                item.status === 'CLOSED' ? 'bg-red-100 text-red-800' :
+                                item.status === 'CANCELLED' ? 'bg-gray-100 text-gray-800' :
+                                'bg-blue-100 text-blue-800'
+                              }`}>
+                                {item.status === 'OPEN' ? 'Mở bán' :
+                                 item.status === 'CLOSED' ? 'Đóng bán' :
+                                 item.status === 'CANCELLED' ? 'Đã hủy' :
+                                 'Đã hoàn thành'}
+                              </span>
+                            </td>
                             <td className="py-3 px-4 border-b text-right">
                               <button
                                 onClick={() => handleEdit(item)}
