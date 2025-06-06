@@ -15,8 +15,8 @@ public class SeatServiceImpl implements SeatService {
     SeatRepository seatRepository;
 
     @Override
-    public List<Seat> findByConditions(String name, Integer planeId, Boolean haveWindow, Pageable pageable) {
-        return seatRepository.findByNameContainsAndPlaneIdAndHaveWindowAndDeletedFalse(name, planeId, haveWindow, pageable).getContent();
+    public List<Seat> findByConditions(String name, Boolean haveWindow, Pageable pageable) {
+        return seatRepository.findByNameContainsAndHaveWindowAndDeletedFalse(name, haveWindow, pageable).getContent();
     }
 
     @Override

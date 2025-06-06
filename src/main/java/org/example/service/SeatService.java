@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface SeatService {
-    List<Seat> findByConditions(String name, Integer planeId, Boolean haveWindow, Pageable pageable);
+    List<Seat> findByConditions(String name, Boolean haveWindow, Pageable pageable);
 
     Seat findById(Integer id);
 

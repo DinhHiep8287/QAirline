@@ -27,9 +27,6 @@ public class Transaction extends BaseObject{
     @JoinColumn(name = "SEAT_ID", nullable = false)
     private Seat seat;
 
-    @Column(name = "PRICE", nullable = false)
-    private String price;
-
     @Column(name = "STATUS", nullable = false)
     private TransactionStatusEnum status;
 }

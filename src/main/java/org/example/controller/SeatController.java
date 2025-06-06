@@ -19,13 +19,13 @@ public class SeatController {
     SeatService seatService;
 
     @GetMapping(value = "/conditions")
-    public ResponseEntity<?> getByEmail(@RequestParam String name, @RequestParam Integer planeId
+    public ResponseEntity<?> getByEmail(@RequestParam String name
             , @RequestParam Boolean haveWindow
             , @RequestParam Integer pageNum
             , @RequestParam Integer pageSize){
         try {
             Pageable pageable = PageRequest.of(pageNum, pageSize);
-            List<Seat> seats = seatService.findByConditions(name, planeId, haveWindow, pageable);
+            List<Seat> seats = seatService.findByConditions(name, haveWindow, pageable);
             if(ObjectUtils.isEmpty(seats)){
                 return ResponseEntity.notFound().build();
             } else {
