@@ -4,6 +4,11 @@ import { getFlights, createFlight, updateFlight, deleteFlight, getPlanes } from 
 import { toast } from 'react-toastify';
 
 const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
+  console.log('FlightForm planes prop:', planes);
+  console.log('FlightForm planes type:', typeof planes);
+  console.log('FlightForm planes is array:', Array.isArray(planes));
+  console.log('FlightForm planes length:', planes?.length);
+  
   const [formData, setFormData] = useState({
     flightNumber: '',
     planeId: '',
@@ -14,6 +19,8 @@ const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
     basePrice: '',
     ...initialData
   });
+
+  console.log('FlightForm current formData:', formData);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -45,17 +52,21 @@ const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
         <div>
           <label className="block text-sm font-medium text-gray-700">Tàu bay</label>
           <select
-            value={formData.planeId}
+            value={formData.planeId || ''}
             onChange={(e) => setFormData({ ...formData, planeId: e.target.value })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             required
           >
             <option value="">Chọn tàu bay</option>
-            {planes.map(plane => (
-              <option key={plane.id} value={plane.id}>
-                {plane.code} - {plane.type}
-              </option>
-            ))}
+            {planes && planes.length > 0 ? (
+              planes.map(plane => (
+                <option key={plane.id} value={plane.id}>
+                  {plane.name} - {plane.producer}
+                </option>
+              ))
+            ) : (
+              <option value="" disabled>Không có tàu bay</option>
+            )}
           </select>
         </div>
 
@@ -146,15 +157,38 @@ const Flights = () => {
     try {
       setLoading(true);
       const [flightsResponse, planesResponse] = await Promise.all([
-        getFlights(page),
+        getFlights(page).catch(error => {
+          if (error.response && error.response.status === 400) {
+            return { data: { content: [], totalElements: 0 } };
+          }
+          throw error;
+        }),
         getPlanes()
       ]);
-      setFlights(flightsResponse.data.content);
-      setTotalPages(Math.ceil(flightsResponse.data.totalElements / 10));
-      setPlanes(planesResponse.data);
+      
+      // Kiểm tra và xử lý dữ liệu planes
+      if (!planesResponse.data || planesResponse.data.length === 0) {
+        setPlanes([]);
+        toast.warning('Chưa có dữ liệu tàu bay');
+      } else {
+        setPlanes(planesResponse.data);
+      }
+
+      // Kiểm tra và xử lý dữ liệu flights
+      if (!flightsResponse.data || !flightsResponse.data.content || flightsResponse.data.content.length === 0) {
+        setFlights([]);
+        setTotalPages(0);
+        toast.warning('Chưa có dữ liệu chuyến bay');
+      } else {
+        setFlights(flightsResponse.data.content);
+        setTotalPages(Math.ceil(flightsResponse.data.totalElements / 10));
+      }
     } catch (error) {
+      console.error('Error details:', error);
+      setPlanes([]);
+      setFlights([]);
+      setTotalPages(0);
       toast.error('Không thể tải dữ liệu');
-      console.error('Error fetching data:', error);
     } finally {
       setLoading(false);
     }
@@ -163,6 +197,12 @@ const Flights = () => {
   useEffect(() => {
     fetchData();
   }, [page]);
+
+  // Debug planes state
+  useEffect(() => {
+    console.log('Planes state in parent:', planes);
+    console.log('Planes state length:', planes?.length);
+  }, [planes]);
 
   const handleSubmit = async (formData) => {
     try {
@@ -270,7 +310,7 @@ const Flights = () => {
                           <tr key={item.id} className="hover:bg-gray-50">
                             <td className="py-3 px-4 border-b">{item.flightNumber}</td>
                             <td className="py-3 px-4 border-b">
-                              {planes.find(p => p.id === item.planeId)?.code}
+                              {planes.find(p => p.id === item.planeId)?.name || 'N/A'}
                             </td>
                             <td className="py-3 px-4 border-b">{item.departure}</td>
                             <td className="py-3 px-4 border-b">{item.destination}</td>

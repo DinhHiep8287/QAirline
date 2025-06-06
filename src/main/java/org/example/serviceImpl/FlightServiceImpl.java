@@ -6,10 +6,12 @@ import org.example.repository.FlightRepository;
 import org.example.service.FlightService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
 
 import java.sql.Date;
 import java.util.List;
 
+@Service
 public class FlightServiceImpl implements FlightService {
     @Autowired
     FlightRepository flightRepository;
