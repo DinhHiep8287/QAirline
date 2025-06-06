@@ -165,8 +165,12 @@ const News = () => {
   };
 
   const handleEdit = (item) => {
-    setEditingNews(item);
-    setShowForm(true);
+    setShowForm(false);
+    setEditingNews(null);
+    setTimeout(() => {
+      setEditingNews(item);
+      setShowForm(true);
+    }, 100);
   };
 
   const handleDelete = async (id) => {

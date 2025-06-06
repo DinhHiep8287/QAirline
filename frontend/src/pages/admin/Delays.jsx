@@ -129,9 +129,12 @@ const Delays = () => {
     fetchFlights();
   }, [page]);
 
-  const handleFlightSelect = async (flight) => {
-    setSelectedFlight(flight);
-    await fetchDelayHistory(flight.id);
+  const handleFlightSelect = (flight) => {
+    setSelectedFlight(null);
+    setTimeout(() => {
+      setSelectedFlight(flight);
+      fetchDelayHistory(flight.id);
+    }, 100);
   };
 
   const handleSubmitDelay = async (formData) => {

@@ -226,8 +226,12 @@ const Flights = () => {
   };
 
   const handleEdit = (item) => {
-    setEditingFlight(item);
-    setShowForm(true);
+    setShowForm(false);
+    setEditingFlight(null);
+    setTimeout(() => {
+      setEditingFlight(item);
+      setShowForm(true);
+    }, 100);
   };
 
   const handleDelete = async (id) => {

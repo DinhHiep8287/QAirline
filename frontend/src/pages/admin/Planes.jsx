@@ -153,8 +153,12 @@ const Planes = () => {
   };
 
   const handleEdit = (item) => {
-    setEditingPlane(item);
-    setShowForm(true);
+    setShowForm(false);
+    setEditingPlane(null);
+    setTimeout(() => {
+      setEditingPlane(item);
+      setShowForm(true);
+    }, 100);
   };
 
   const handleDelete = async (id) => {
