@@ -17,7 +17,7 @@ const News = () => {
                 setLoading(false);
             } catch (err) {
                 console.error('Error fetching news:', err);
-                setError('Failed to fetch news');
+                setError('Không thể tải tin tức');
                 setLoading(false);
             }
         };
@@ -26,7 +26,18 @@ const News = () => {
     }, []);
 
     const handleReadMore = (id) => {
+        window.scrollTo(0, 0);
         navigate(`/news/${id}`);
+    };
+
+    const handleSeeAllClick = (e) => {
+        e.preventDefault();
+        window.scrollTo(0, 0);
+        navigate('/all-news');
+    };
+
+    const handleNewsClick = (newsItem) => {
+        navigate('/news-detail', { state: { newsInfo: newsItem } });
     };
 
     const getCategoryColor = (category) => {
@@ -55,7 +66,7 @@ const News = () => {
     if (!news || news.length === 0) {
         return (
             <div className="text-center py-12">
-                <p className="text-gray-500">No news available at the moment.</p>
+                <p className="text-gray-500">Hiện không có tin tức nào.</p>
             </div>
         );
     }
@@ -63,51 +74,36 @@ const News = () => {
     return (
         <section className="py-12 bg-white">
             <div className="container mx-auto px-4">
-                <h2 className="text-3xl font-bold text-center mb-8">Latest News</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {news.map((item, index) => (
-                        <div key={item.id || index} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                            {item.pictureLink ? (
-                                <img 
-                                    src={item.pictureLink} 
-                                    alt={item.title}
-                                    className="w-full h-48 object-cover"
-                                />
-                            ) : (
-                                <div className="w-full h-48 bg-gray-200 flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                </div>
-                            )}
-                            <div className="p-6">
-                                <div className="flex items-center justify-between mb-3">
-                                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getCategoryColor(item.category)}`}>
-                                        {item.category}
-                                    </span>
+                <div className="flex justify-between items-center mb-8">
+                    <h2 className="text-2xl font-bold text-[#6E7491]">Tin tức mới nhất</h2>
+                    <button
+                        onClick={handleSeeAllClick}
+                        className="text-blue-500 hover:text-blue-700"
+                    >
+                        Xem tất cả
+                    </button>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {news.map((item) => (
+                        <div
+                            key={item.id}
+                            className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transform transition-transform hover:scale-105"
+                            onClick={() => handleNewsClick(item)}
+                        >
+                            <img
+                                src={item.pictureLink}
+                                alt={item.title}
+                                className="w-full h-48 object-cover"
+                            />
+                            <div className="p-4">
+                                <h3 className="text-xl font-semibold text-[#6E7491] mb-2">{item.title}</h3>
+                                <p className="text-gray-600 text-sm mb-2">Tác giả: {item.author}</p>
+                                <p className="text-gray-700 line-clamp-3">{item.summary}</p>
+                                <div className="mt-4 flex justify-between items-center">
+                                    <span className="text-sm text-blue-500">Xem chi tiết</span>
                                     <span className="text-sm text-gray-500">
-                                        {item.createdDate ? new Date(item.createdDate).toLocaleDateString('vi-VN', {
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric'
-                                        }) : 'No date'}
+                                        {new Date(item.createDate).toLocaleDateString('vi-VN')}
                                     </span>
-                                </div>
-                                <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                                <p className="text-gray-600 mb-4 line-clamp-3">{item.summary || 'No summary available'}</p>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm text-gray-600">
-                                        By {item.author}
-                                    </span>
-                                    <button 
-                                        className="text-blue-500 hover:text-blue-700 font-medium flex items-center"
-                                        onClick={() => handleReadMore(item.id)}
-                                    >
-                                        Read More
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                                        </svg>
-                                    </button>
                                 </div>
                             </div>
                         </div>

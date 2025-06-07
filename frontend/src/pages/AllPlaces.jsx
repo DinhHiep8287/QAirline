@@ -1,10 +1,9 @@
-import { useNavigate } from "react-router-dom";
-import { right } from "../assets/icons";
-import PlacesCard from "../container/PlacesCard";
 import { useState, useEffect } from 'react';
 import { getNewsByCategory } from '../services/api';
+import PlacesCard from '../container/PlacesCard';
+import { useNavigate } from 'react-router-dom';
 
-const Places = () => {
+const AllPlaces = () => {
   const navigate = useNavigate();
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,7 +12,7 @@ const Places = () => {
   useEffect(() => {
     const fetchPlaces = async () => {
       try {
-        const response = await getNewsByCategory('PLACE', 0, 3);
+        const response = await getNewsByCategory('PLACE', 0, 1000);
         if (response?.data) {
           setPlaces(Array.isArray(response.data) ? response.data : []);
         }
@@ -28,12 +27,6 @@ const Places = () => {
     fetchPlaces();
   }, []);
 
-  const handleSeeAllClick = (e) => {
-    e.preventDefault();
-    window.scrollTo(0, 0);
-    navigate('/all-places');
-  };
-
   const handlePlaceClick = (place) => {
     // Lưu thông tin địa điểm vào localStorage hoặc state management
     localStorage.setItem('selectedPlace', JSON.stringify(place));
@@ -42,7 +35,7 @@ const Places = () => {
   };
 
   if (loading) return (
-    <div className="flex justify-center items-center min-h-[200px]">
+    <div className="flex justify-center items-center min-h-screen">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
     </div>
   );
@@ -60,16 +53,8 @@ const Places = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h2 className="text-2xl font-bold text-[#6E7491]">Địa điểm du lịch</h2>
-        <button
-          onClick={handleSeeAllClick}
-          className="text-blue-500 hover:text-blue-700"
-        >
-          Xem tất cả
-        </button>
-      </div>
+    <div className="container mx-auto px-4 py-8 mt-[70px]">
+      <h1 className="text-3xl font-bold text-[#6E7491] mb-8">Địa điểm du lịch</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {places.map((place) => (
           <div key={place.id} onClick={() => handlePlaceClick(place)} className="cursor-pointer">
@@ -87,4 +72,4 @@ const Places = () => {
   );
 };
 
-export default Places;
+export default AllPlaces; 
