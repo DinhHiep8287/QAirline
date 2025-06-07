@@ -559,6 +559,7 @@ const Bookings = () => {
                               <th className="text-left py-3 px-4 border-b">Chuyến bay</th>
                               <th className="text-left py-3 px-4 border-b">Ngày đặt</th>
                               <th className="text-left py-3 px-4 border-b">Trạng thái</th>
+                              <th className="text-left py-3 px-4 border-b">Hạng ghế</th>
                               <th className="text-right py-3 px-4 border-b">Tổng tiền</th>
                               <th className="text-right py-3 px-4 border-b">Thao tác</th>
                             </tr>
@@ -609,6 +610,21 @@ const Bookings = () => {
                                       : booking.status === 'DELAY'
                                       ? 'Delay'
                                       : 'Đã hủy'}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 border-b">
+                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                    booking.seat?.type === 'ECONOMY'
+                                      ? 'bg-gray-100 text-gray-800'
+                                      : booking.seat?.type === 'BUSINESS'
+                                      ? 'bg-blue-100 text-blue-800'
+                                      : 'bg-purple-100 text-purple-800'
+                                  }`}>
+                                    {booking.seat?.type === 'ECONOMY'
+                                      ? 'Economy'
+                                      : booking.seat?.type === 'BUSINESS'
+                                      ? 'Business'
+                                      : 'First Class'}
                                   </span>
                                 </td>
                                 <td className="py-3 px-4 border-b text-right">
