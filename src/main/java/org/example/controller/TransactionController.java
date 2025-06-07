@@ -153,23 +153,15 @@ public class TransactionController {
         }
     }
 
-    @GetMapping(value = "/delay")
+    @GetMapping(value = "/flight")
     public ResponseEntity<?> sendDelayNoti(@RequestParam Integer flightId) {
         try {
             List<Transaction> transactions = transactionService.findByFlightId(flightId);
             if (ObjectUtils.isEmpty(transactions)) {
                 return ResponseEntity.badRequest()
                         .body("Not found");
-            } else {
-                EmailService emailService = new EmailService();
-                for (Transaction t : transactions) {
-                    if(!ObjectUtils.isEmpty(t.getUser())){
-                        t.setStatus(TransactionStatusEnum.DELAY);
-                        transactionService.save(t);
-                        emailService.sendNotification(t);
-                    }
-                }
-                return ResponseEntity.ok().body("Send successfully");
+            } else {               
+                return ResponseEntity.ok().body(transactions);
             }
         } catch (Exception e) {
             return ResponseEntity.internalServerError()

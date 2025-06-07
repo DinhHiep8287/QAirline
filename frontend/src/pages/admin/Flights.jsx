@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
-import { getFlights, createFlight, updateFlight, deleteFlight, getPlanes } from '../../services/api';
+import { getFlights, createFlight, updateFlight, deleteFlight, getPlanes, getTransactionsByConditions, getTransactionsByFlight, updateTransaction } from '../../services/api';
 import { toast } from 'react-toastify';
 
 const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
@@ -27,8 +27,8 @@ const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
         name: initialData.name || '',
         planeId: initialData.plane?.id || '',
         plane: initialData.plane || null,
-        startTime: initialData.startTime ? new Date(initialData.startTime).toISOString().slice(0, 16) : '',
-        endTime: initialData.endTime ? new Date(initialData.endTime).toISOString().slice(0, 16) : '',
+        startTime: initialData.startTime,
+        endTime: initialData.endTime,
         status: initialData.status || 'OPEN',
         departure: initialData.departure || '',
         departureCode: initialData.departureCode || '',
@@ -165,8 +165,8 @@ const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
           >
             <option value="OPEN">Mở bán</option>
             <option value="CLOSED">Đóng bán</option>
-            <option value="CANCELLED">Đã hủy</option>
-            <option value="COMPLETED">Đã hoàn thành</option>
+            <option value="CANCEL">Đã hủy</option>
+            <option value="DELAY">Trì hoãn</option>
           </select>
         </div>
 
@@ -305,7 +305,12 @@ const Flights = () => {
   const handleSubmit = async (formData) => {
     try {
       setLoading(true);
+      console.log('Parent component received form data:', formData);
+
       if (editingFlight) {
+        // Kiểm tra xem giờ khởi hành có thay đổi không
+        const isTimeChanged = formData.startTime !== editingFlight.startTime;
+
         // Cập nhật chuyến bay
         const updateData = {
           id: editingFlight.id,
@@ -325,8 +330,78 @@ const Flights = () => {
           gate: formData.gate,
           deleted: editingFlight.deleted
         };
+        console.log('Update data being sent to server:', JSON.stringify(updateData, null, 2));
         await updateFlight(updateData);
+        const updatedFlight = updateData;
+        console.log('Response from server:', JSON.stringify(updatedFlight, null, 2));
         toast.success('Cập nhật chuyến bay thành công');
+
+        let transactions;
+        if (isTimeChanged) {
+          try {
+            // Nếu thời gian thay đổi, lấy danh sách transaction với status BOOKED
+            const transactionsResponse = await getTransactionsByConditions(
+              formData.name,
+              '2000-01-01', // dateFrom - từ năm 2000
+              '3000-12-31', // dateTo - đến năm 3000
+              'BOOKED',
+              0, // pageNum
+              10 // pageSize - lấy tất cả
+            );
+            transactions = transactionsResponse.data;
+            console.log('Transactions found by conditions (BOOKED):', JSON.stringify(transactions, null, 2));
+          } catch (error) {
+            console.log('No BOOKED transactions found, searching for DELAY transactions...');
+            try {
+              // Nếu không tìm thấy transaction BOOKED, tìm với status DELAY
+              const delayTransactionsResponse = await getTransactionsByConditions(
+                formData.name,
+                '2000-01-01',
+                '3000-12-31',
+                'DELAY',
+                0,
+                10
+              );
+              transactions = delayTransactionsResponse.data;
+              console.log('Transactions found by conditions (DELAY):', JSON.stringify(transactions, null, 2));
+            } catch (delayError) {
+              console.log('No DELAY transactions found either');
+              transactions = [];
+            }
+          }
+        } else {
+          // Nếu thời gian không thay đổi, lấy tất cả transaction của chuyến bay
+          const transactionsResponse = await getTransactionsByFlight(editingFlight.id);
+          transactions = transactionsResponse.data;
+          console.log('Transactions found by flight ID:', JSON.stringify(transactions, null, 2));
+        }
+
+        // Cập nhật từng transaction
+        for (const transaction of transactions) {
+          const updateTransactionData = {
+            id: transaction.id,
+            createBy: transaction.createBy,
+            createDate: transaction.createDate,
+            updateBy: 'admin',
+            updateDate: new Date().toISOString(),
+            flight: updatedFlight,
+            seat: transaction.seat,
+            status: isTimeChanged ? 'DELAY' : transaction.status,
+            price: transaction.price,
+            deleted: transaction.deleted
+          };
+          console.log('Transaction update data:', JSON.stringify(updateTransactionData, null, 2));
+          await updateTransaction(updateTransactionData);
+        }
+        if (isTimeChanged) {
+          if (transactions && transactions.length > 0) {
+            toast.success('Cập nhật vé thành công và đã đánh dấu là bị trễ');
+          } else {
+            toast.success('Cập nhật chuyến bay thành công (không có vé cần cập nhật)');
+          }
+        } else {
+          toast.success('Cập nhật vé thành công');
+        }
       } else {
         await createFlight(formData);
         toast.success('Thêm chuyến bay thành công');
@@ -335,8 +410,8 @@ const Flights = () => {
       setShowForm(false);
       setEditingFlight(null);
     } catch (error) {
-      toast.error('Có lỗi xảy ra');
       console.error('Error submitting flight:', error);
+      toast.error('Có lỗi xảy ra');
     } finally {
       setLoading(false);
     }
@@ -445,13 +520,13 @@ const Flights = () => {
                               <span className={`px-2 py-1 rounded-full text-xs ${
                                 item.status === 'OPEN' ? 'bg-green-100 text-green-800' :
                                 item.status === 'CLOSED' ? 'bg-red-100 text-red-800' :
-                                item.status === 'CANCELLED' ? 'bg-gray-100 text-gray-800' :
+                                item.status === 'CANCEL' ? 'bg-gray-100 text-gray-800' :
                                 'bg-blue-100 text-blue-800'
                               }`}>
                                 {item.status === 'OPEN' ? 'Mở bán' :
                                  item.status === 'CLOSED' ? 'Đóng bán' :
-                                 item.status === 'CANCELLED' ? 'Đã hủy' :
-                                 'Đã hoàn thành'}
+                                 item.status === 'CANCEL' ? 'Đã hủy' :
+                                 'Trì hoãn'}
                               </span>
                             </td>
                             <td className="py-3 px-4 border-b text-right">

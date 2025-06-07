@@ -81,7 +81,7 @@ export const updateTransactions = (transactionList) =>
   api.put('/transaction/list', transactionList);
 export const deleteTransaction = (id) => 
   api.delete(`/transaction?id=${id}`);
-export const sendDelayNotification = (flightId) => 
-  api.get(`/transaction/delay?flightId=${flightId}`);
+export const getTransactionsByFlight = (flightId) => 
+  api.get(`/transaction/flight?flightId=${flightId}`);
 
 export default api; 

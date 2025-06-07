@@ -5,7 +5,7 @@ import lombok.*;
 import org.example.constant.FlightStatus;
 import org.example.constant.SeatStatus;
 
-import java.sql.Date;
+import java.time.LocalDateTime;
 
 @Table(name = "FLIGHT")
 @Entity
@@ -23,10 +23,10 @@ public class Flight extends BaseObject{
     private Plane plane;
 
     @Column(name = "START_TIME", nullable = false)
-    private Date startTime;
+    private LocalDateTime startTime;
 
     @Column(name = "END_TIME", nullable = false)
-    private Date endTime;
+    private LocalDateTime endTime;
 
     @Column(name = "STATUS", nullable = false)
     private FlightStatus status;
