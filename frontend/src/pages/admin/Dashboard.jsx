@@ -41,12 +41,6 @@ const Dashboard = () => {
       to: '/admin/bookings',
       description: 'Xem thống kê và danh sách đặt vé'
     },
-    {
-      title: 'Cập nhật giờ khởi hành',
-      icon: FaClock,
-      to: '/admin/delays',
-      description: 'Quản lý delay và cập nhật giờ bay'
-    }
   ];
 
   return (
