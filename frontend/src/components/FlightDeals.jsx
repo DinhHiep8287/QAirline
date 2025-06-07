@@ -1,79 +1,93 @@
-import {  useNavigate } from "react-router-dom";
-import { right } from "../assets/icons";
-import { msunrise, shangai, sunrise, sydney, temple } from "../assets/images";
+import { useNavigate } from "react-router-dom";
 import FlightDealsCard from "../container/FlightDealsCard";
+import { useState, useEffect } from 'react';
+import { getNewsByCategory } from '../services/api';
+import { FaArrowRight } from 'react-icons/fa';
 
 const FlightDeals = () => {
+  const navigate = useNavigate();
+  const [deals, setDeals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const navigate = useNavigate()
+  useEffect(() => {
+    const fetchDeals = async () => {
+      try {
+        const response = await getNewsByCategory('FLIGHT_DEAL', 0, 3);
+        if (response?.data) {
+          setDeals(Array.isArray(response.data) ? response.data : []);
+        }
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching flight deals:', err);
+        setError('Không thể tải ưu đãi chuyến bay');
+        setLoading(false);
+      }
+    };
+
+    fetchDeals();
+  }, []);
 
   const handleSeeAllClick = (e) => {
     e.preventDefault();
     window.scrollTo(0, 0);
-    navigate('/packages')
-    
+    navigate('/all-flight-deals');
   };
 
-  return (
-    <>
-      <div className="px-8 flex flex-col gap-7">
-        <div className="flex items-center justify-between">
-          <p className="text-[#6E7491] font-medium md:font-bold sm:text-base md:text-[24px] md:leading-8">
-            Find your next adventure <br className=" block sm:hidden " /> with
-            these <span className="text-[#605DEC]">flight deals</span>
-          </p>
-          <div
-            className="flex items-start justify-center gap-1 cursor-pointer"
-            onClick={handleSeeAllClick}
-          >
-            <p className="text-[#A1B0CC] text-sm md:text-lg" >All</p>
-            <img src={right} alt="arrow" className="w-5 h-5 md:w-6 md:h-6" />
-          </div>
-        </div>
-        <div className="flex gap-16 flex-wrap items-start ">
-          <FlightDealsCard
-            image={shangai}
-            title="The Bund, "
-            name="Shanghai"
-            price="$598"
-            des=" China’s most international city"
-          />
-          <FlightDealsCard
-            image={sydney}
-            title="Sydney Opera House, "
-            name="Sydney"
-            price="$981"
-            des=" Take a stroll along the famous harbor"
-          />
-          <FlightDealsCard
-            image={temple}
-            title="Kōdaiji Temple,"
-            name="Kyoto"
-            price="$633"
-            des=" Step back in time in the Gion district"
-          />
-        </div>
+  const handleDealClick = (deal) => {
+    localStorage.setItem('selectedDeal', JSON.stringify(deal));
+    navigate('/explore', { state: { dealInfo: deal } });
+  };
 
-        <div className="w-full h-full flex flex-col dealsShadow rounded-b gap-2 ">
-           <div className="w-full h-full">
-             <img src={sunrise} alt="" className="w-full h-full object-cover rounded-t hidden md:block" />
-             <img src={msunrise} alt="" className="w-full h-full object-cover rounded-t block md:hidden" />
-           </div>
-           <div className="w-full h-full flex flex-col justify-center items-start gap-1 px-4 py-3">
-          <div className="flex flex-row items-center justify-between w-full">
-            <h1 className="text-[#6E7491] text-base font-medium capitalize">
-            Tsavo East National Park, <span className="text-[#605DEC]">Kenya</span>
-            </h1>
-            <p className="text-[#6E7491] text-base font-medium">$1,248</p>
-          </div>
-          <p className="text-[#7C8DB0] text-sm font-normal">
-          Named after the Tsavo River, and opened in April 1984, Tsavo East National Park is one of the oldest parks in Kenya. It is located in the semi-arid Taru Desert.
-          </p>
-        </div>
-        </div>
+  if (loading) return (
+    <div className="flex justify-center items-center min-h-[200px]">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#605DEC]"></div>
+    </div>
+  );
 
+  if (error) return (
+    <div className="text-red-500 text-center py-4">{error}</div>
+  );
+
+  if (!deals || deals.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-500">Hiện không có ưu đãi chuyến bay nào.</p>
       </div>
-    </>
+    );
+  }
+
+  return (
+    <section className="py-12 bg-white">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-2xl font-bold text-[#6E7491] mb-2">Ưu đãi chuyến bay</h2>
+            <p className="text-gray-600">Khám phá những chuyến bay giá tốt nhất</p>
+          </div>
+          <button
+            onClick={handleSeeAllClick}
+            className="flex items-center gap-2 text-[#605DEC] hover:text-[#4B48BF] transition-colors group"
+          >
+            <span>Xem tất cả</span>
+            <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {deals.map((deal) => (
+            <div key={deal.id} onClick={() => handleDealClick(deal)} className="cursor-pointer">
+              <FlightDealsCard
+                image={deal.pictureLink}
+                title={deal.title}
+                name={deal.summary}
+                price={deal.content}
+                des={deal.author}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 };
 

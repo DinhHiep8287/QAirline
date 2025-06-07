@@ -1,74 +1,57 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 
-const NewsDetail = () => {
+const PlaceDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const newsInfo = location.state?.newsInfo;
+  const placeInfo = location.state?.placeInfo;
 
   useEffect(() => {
-    if (!newsInfo) {
-      navigate('/all-news');
+    if (!placeInfo) {
+      navigate('/all-places');
     }
     window.scrollTo(0, 0);
-  }, [newsInfo, navigate]);
+  }, [placeInfo, navigate]);
 
-  if (!newsInfo) {
+  if (!placeInfo) {
     return null;
   }
-
-  const getCategoryLabel = (category) => {
-    switch (category) {
-      case 'NEWS':
-        return 'Tin tức';
-      case 'PROMOTION':
-        return 'Khuyến mãi';
-      case 'HELP':
-        return 'Trợ giúp';
-      case 'FLIGHT_DEAL':
-        return 'Ưu đãi chuyến bay';
-      case 'PLACE':
-        return 'Địa điểm du lịch';
-      default:
-        return category;
-    }
-  };
 
   return (
     <div className="container mx-auto px-4 py-8 mt-[70px]">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
         <img
-          src={newsInfo.pictureLink}
-          alt={newsInfo.title}
+          src={placeInfo.pictureLink}
+          alt={placeInfo.title}
           className="w-full h-[400px] object-cover"
         />
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <span className="text-sm text-gray-500">
-              {new Date(newsInfo.createDate).toLocaleDateString('vi-VN', {
+              {new Date(placeInfo.createDate).toLocaleDateString('vi-VN', {
                 year: 'numeric',
                 month: 'long',
                 day: 'numeric'
               })}
             </span>
-            <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-              {getCategoryLabel(newsInfo.category)}
+            <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+              Địa điểm du lịch
             </span>
           </div>
-          <h1 className="text-3xl font-bold text-[#6E7491] mb-4">{newsInfo.title}</h1>
+          <h1 className="text-3xl font-bold text-[#6E7491] mb-4">{placeInfo.title}</h1>
           <div className="flex items-center mb-6">
-            <span className="text-gray-600">Tác giả: {newsInfo.author}</span>
+            <span className="text-gray-600">Tác giả: {placeInfo.author}</span>
           </div>
           <div className="prose max-w-none">
-            <div className="text-gray-700 text-lg mb-6">{newsInfo.summary}</div>
+            <div className="text-gray-700 text-lg mb-6">{placeInfo.summary}</div>
             <div 
               className="text-gray-800 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: newsInfo.content }}
+              dangerouslySetInnerHTML={{ __html: placeInfo.content }}
             />
           </div>
         </div>
       </div>
-      <div className="max-w-4xl mx-auto mt-8">
+      <div className="max-w-4xl mx-auto mt-8 flex justify-between">
         <button
           onClick={() => navigate(-1)}
           className="text-blue-500 hover:text-blue-700 flex items-center"
@@ -87,9 +70,27 @@ const NewsDetail = () => {
           </svg>
           Quay lại
         </button>
+        <button
+          onClick={() => navigate('/explore')}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center"
+        >
+          Đặt vé ngay
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-5 w-5 ml-2"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+          >
+            <path
+              fillRule="evenodd"
+              d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </button>
       </div>
     </div>
   );
 };
 
-export default NewsDetail; 
+export default PlaceDetail; 

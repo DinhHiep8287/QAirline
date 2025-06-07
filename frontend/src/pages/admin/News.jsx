@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
-import { getNews, createNews, updateNews, deleteNews } from '../../services/api';
+import { getNews, createNews, updateNews, deleteNews, getNewsByCategory, getNewsByTitle } from '../../services/api';
 import { toast } from 'react-toastify';
 
 const NewsForm = ({ onSubmit, initialData = null }) => {
@@ -62,6 +62,9 @@ const NewsForm = ({ onSubmit, initialData = null }) => {
           >
             <option value="NEWS">Tin tức</option>
             <option value="PROMOTION">Khuyến mãi</option>
+            <option value="HELP">Trợ giúp</option>
+            <option value="FLIGHT_DEAL">Ưu đãi chuyến bay</option>
+            <option value="PLACE">Địa điểm du lịch</option>
           </select>
         </div>
 
@@ -116,14 +119,36 @@ const News = () => {
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [searchTitle, setSearchTitle] = useState('');
+  const pageSize = 1000;
+
+  const categories = [
+    { value: 'ALL', label: 'Tất cả' },
+    { value: 'NEWS', label: 'Tin tức' },
+    { value: 'PROMOTION', label: 'Khuyến mãi' },
+    { value: 'HELP', label: 'Trợ giúp' },
+    { value: 'FLIGHT_DEAL', label: 'Ưu đãi chuyến bay' },
+    { value: 'PLACE', label: 'Địa điểm du lịch' }
+  ];
 
   const fetchNews = async () => {
     try {
       setLoading(true);
-      const response = await getNews(page);
+      let response;
+      if (selectedCategory === 'ALL') {
+        if (searchTitle) {
+          response = await getNewsByTitle(searchTitle, page, pageSize);
+        } else {
+          response = await getNews(0, 1000); // Get all news when no filter
+        }
+      } else {
+        response = await getNewsByCategory(selectedCategory, page, pageSize);
+      }
+      
       if (response.data) {
         setNews(response.data);
-        setTotalPages(Math.ceil(response.data.length / 10));
+        setTotalPages(Math.ceil(response.data.length / pageSize));
       }
     } catch (error) {
       toast.error('Không thể tải danh sách tin tức');
@@ -135,7 +160,22 @@ const News = () => {
 
   useEffect(() => {
     fetchNews();
-  }, [page]);
+  }, [page, selectedCategory, searchTitle]);
+
+  const handleCategoryChange = (e) => {
+    setSelectedCategory(e.target.value);
+    setPage(0);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchTitle(e.target.value);
+    setPage(0);
+  };
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    fetchNews();
+  };
 
   const handleSubmit = async (formData) => {
     try {
@@ -200,7 +240,7 @@ const News = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Quản lý tin tức</h1>
@@ -217,55 +257,122 @@ const News = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-md">
-              <div className="p-6">
+              <div className="p-6 border-b border-gray-200">
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold mb-2 sm:mb-0">Quản lý tin tức</h2>
+                  <button
+                    onClick={() => {
+                      setEditingNews(null);
+                      setShowForm(true);
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
+                    disabled={loading}
+                  >
+                    <FaPlus className="mr-2" />
+                    Thêm mới
+                  </button>
+                </div>
+
+                <div className="mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Loại tin
+                    </label>
+                    <select
+                      value={selectedCategory}
+                      onChange={handleCategoryChange}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    >
+                      {categories.map(cat => (
+                        <option key={cat.value} value={cat.value}>
+                          {cat.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tìm kiếm theo tiêu đề
+                    </label>
+                    <form onSubmit={handleSearchSubmit} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={searchTitle}
+                        onChange={handleSearchChange}
+                        placeholder="Nhập tiêu đề tin tức..."
+                        className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                      />
+                      <button
+                        type="submit"
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                      >
+                        Tìm kiếm
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
                 {loading ? (
-                  <div className="flex justify-center items-center h-32">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <div className="text-center py-4">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                  </div>
+                ) : news.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500">
+                    Không tìm thấy tin tức nào
                   </div>
                 ) : (
                   <>
-                    <table className="min-w-full">
-                      <thead>
-                        <tr>
-                          <th className="text-left py-3 px-4 border-b">Tiêu đề</th>
-                          <th className="text-left py-3 px-4 border-b">Loại</th>
-                          <th className="text-left py-3 px-4 border-b">Ngày đăng</th>
-                          <th className="text-right py-3 px-4 border-b">Thao tác</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {news.map((item) => (
-                          <tr key={item.id}>
-                            <td className="py-3 px-4 border-b">{item.title}</td>
-                            <td className="py-3 px-4 border-b">
-                              {item.category === 'NEWS' ? 'Tin tức' : 'Khuyến mãi'}
-                            </td>
-                            <td className="py-3 px-4 border-b">
-                              {new Date(item.createDate).toLocaleString()}
-                            </td>
-                            <td className="py-3 px-4 border-b text-right">
-                              <button
-                                onClick={() => handleEdit(item)}
-                                className="text-blue-600 hover:text-blue-800 mr-3"
-                                disabled={loading}
-                              >
-                                <FaEdit />
-                              </button>
-                              <button
-                                onClick={() => handleDelete(item.id)}
-                                className="text-red-600 hover:text-red-800"
-                                disabled={loading}
-                              >
-                                <FaTrash />
-                              </button>
-                            </td>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="py-3 px-4 text-left">Tiêu đề</th>
+                            <th className="py-3 px-4 text-left">Loại</th>
+                            <th className="py-3 px-4 text-left">Ngày tạo</th>
+                            <th className="py-3 px-4 text-right">Thao tác</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {news.map((item) => (
+                            <tr key={item.id} className="hover:bg-gray-50">
+                              <td className="py-3 px-4 border-b">{item.title}</td>
+                              <td className="py-3 px-4 border-b">
+                                {categories.find(cat => cat.value === item.category)?.label || item.category}
+                              </td>
+                              <td className="py-3 px-4 border-b">
+                                {new Date(item.createDate).toLocaleString('vi-VN')}
+                              </td>
+                              <td className="py-3 px-4 border-b text-right">
+                                <button
+                                  onClick={() => handleEdit(item)}
+                                  className="text-blue-600 hover:text-blue-800 mr-3"
+                                  disabled={loading}
+                                >
+                                  <FaEdit />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(item.id)}
+                                  className="text-red-600 hover:text-red-800"
+                                  disabled={loading}
+                                >
+                                  <FaTrash />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
 
                     {totalPages > 1 && (
                       <div className="flex justify-center mt-4 gap-2">
+                        <button
+                          onClick={() => setPage(Math.max(0, page - 1))}
+                          disabled={page === 0 || loading}
+                          className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                        >
+                          Trước
+                        </button>
                         {Array.from({ length: totalPages }).map((_, index) => (
                           <button
                             key={index}
@@ -280,6 +387,13 @@ const News = () => {
                             {index + 1}
                           </button>
                         ))}
+                        <button
+                          onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                          disabled={page === totalPages - 1 || loading}
+                          className="px-3 py-1 rounded bg-gray-200 hover:bg-gray-300 disabled:opacity-50"
+                        >
+                          Sau
+                        </button>
                       </div>
                     )}
                   </>

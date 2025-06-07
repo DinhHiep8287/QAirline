@@ -1,31 +1,34 @@
 /* eslint-disable react/prop-types */
 
-
 const FlightDealsCard = ({ image, title, name, price, des }) => {
   return (
-    <>
-      <div className="w-[410.67px] h-[480px] flex flex-col justify-start gap-2 dealsShadow rounded-b">
-        <div className="w-full h-[397px]">
-          <img
-            src={image}
-            alt="images"
-            className="w-full h-full object-cover rounded-t"
-          />
-        </div>
-        <div className="w-full h-full flex flex-col justify-center items-start gap-1 px-4">
-          <div className="flex flex-row items-center justify-between w-full">
-            <h1 className="text-[#6E7491] text-base font-medium capitalize">
-              {title} <span className="text-[#605DEC]">{name}</span>
-            </h1>
-            <p className="text-[#6E7491] text-base font-medium">{price}</p>
-          </div>
-          <p className="text-[#7C8DB0] text-sm font-normal">
-          {des}
-          </p>
+    <div className="bg-white rounded-lg shadow-md overflow-hidden transform transition-all duration-300 hover:scale-105 hover:shadow-xl">
+      <div className="relative">
+        <img
+          src={image}
+          alt={title}
+          className="w-full h-64 object-cover"
+        />
+        <div className="absolute top-4 right-4 bg-[#605DEC] text-white px-3 py-1 rounded-full text-sm font-medium">
+          {price}
         </div>
       </div>
-
-    </>
+      <div className="p-6">
+        <div className="flex flex-col gap-2">
+          <h3 className="text-xl font-semibold text-[#6E7491]">
+            {title} <span className="text-[#605DEC]">{name}</span>
+          </h3>
+          <p className="text-gray-600 text-sm">{des}</p>
+        </div>
+        <div className="mt-4 flex justify-between items-center">
+          <span className="text-sm text-[#605DEC] font-medium">Xem chi tiết</span>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+            <span className="text-sm text-gray-500">Còn chỗ</span>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

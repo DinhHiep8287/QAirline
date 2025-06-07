@@ -5,8 +5,6 @@ import {
     Confirm,
     FlightExplore,
     Flights,
-    Hotels,
-    Packages,
     PassengerInfo,
     Payment,
     SeatSelect,
@@ -23,6 +21,10 @@ import Planes from "./pages/admin/Planes";
 import AdminFlights from "./pages/admin/Flights";
 import Bookings from "./pages/admin/Bookings";
 import Delays from "./pages/admin/Delays";
+import AllFlightDeals from './pages/AllFlightDeals';
+import AllPlaces from './pages/AllPlaces';
+import AllNews from './pages/AllNews';
+import PlaceDetail from './pages/PlaceDetail';
 
 const ClientLayout = () => {
     return (
@@ -54,14 +56,17 @@ const App = () => {
                         <Route index element={<Flights />} />
                         <Route path="profile" element={<Profile />} />
                         <Route path="booking-history" element={<BookingHistory />} />
-                        <Route path="hotels" element={<Hotels />} />
-                        <Route path="packages" element={<Packages />} />
                         <Route path="explore" element={<FlightExplore />} />
                         <Route path="passenger-info" element={<PassengerInfo />} />
                         <Route path="seat-selection" element={<SeatSelect />} />
                         <Route path="payment" element={<Payment />} />
                         <Route path="confirm" element={<Confirm />} />
                         <Route path="news/:id" element={<NewsDetail />} />
+                        <Route path="all-flight-deals" element={<AllFlightDeals />} />
+                        <Route path="all-places" element={<AllPlaces />} />
+                        <Route path="all-news" element={<AllNews />} />
+                        <Route path="news-detail" element={<NewsDetail />} />
+                        <Route path="place-detail" element={<PlaceDetail />} />
                     </Route>
                 </Routes>
                 <ToastContainer
