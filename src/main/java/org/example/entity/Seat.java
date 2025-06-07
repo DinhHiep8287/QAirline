@@ -28,7 +28,4 @@ public class Seat extends BaseObject{
 
     @Column(name = "SUMMARY")
     private String summary;
-
-    @Column(name = "PRICE", nullable = false)
-    private String price;
 }
