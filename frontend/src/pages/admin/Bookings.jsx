@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FaSearch, FaPlus } from 'react-icons/fa';
-import { getTransactions, getTransactionsByConditions, getTransactionsByStatus, createTransaction, getFlights, createSeat, updateTransaction, updateSeat } from '../../services/api';
+import { FaSearch, FaPlus, FaTrash, FaEdit } from 'react-icons/fa';
+import { getTransactions, getTransactionsByConditions, getTransactionsByStatus, createTransaction, getFlights, createSeat, updateTransaction, updateSeat, deleteTransaction } from '../../services/api';
 import { toast } from 'react-toastify';
 
 const BookingFilters = ({ onFilter }) => {
@@ -517,6 +517,24 @@ const Bookings = () => {
     }, 100);
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa vé này?')) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await deleteTransaction(id);
+      toast.success('Xóa vé thành công');
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting booking:', error);
+      toast.error('Không thể xóa vé');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
@@ -631,15 +649,25 @@ const Bookings = () => {
                                   {formatCurrency(booking.price)}
                                 </td>
                                 <td className="py-3 px-4 border-b text-right">
-                                  <button
-                                    onClick={() => {
-                                      setEditingBooking(booking);
-                                      setShowForm(true);
-                                    }}
-                                    className="text-blue-600 hover:text-blue-800"
-                                  >
-                                    Cập nhật
-                                  </button>
+                                  <div className="flex justify-end space-x-2">
+                                    <button
+                                      onClick={() => {
+                                        setEditingBooking(booking);
+                                        setShowForm(true);
+                                      }}
+                                      className="text-blue-600 hover:text-blue-800"
+                                      disabled={loading}
+                                    >
+                                      <FaEdit />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(booking.id)}
+                                      className="text-red-600 hover:text-red-800"
+                                      disabled={loading}
+                                    >
+                                      <FaTrash />
+                                    </button>
+                                  </div>
                                 </td>
                               </tr>
                             ))}
