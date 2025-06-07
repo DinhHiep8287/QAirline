@@ -29,4 +29,7 @@ public class Transaction extends BaseObject{
 
     @Column(name = "STATUS", nullable = false)
     private TransactionStatusEnum status;
+
+    @Column(name = "PRICE", nullable = false)
+    private String price;
 }
