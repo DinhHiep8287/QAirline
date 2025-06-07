@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FaSearch } from 'react-icons/fa';
-import { getTransactions, getTransactionsByConditions, getTransactionsByStatus } from '../../services/api';
+import { FaSearch, FaPlus } from 'react-icons/fa';
+import { getTransactions, getTransactionsByConditions, getTransactionsByStatus, createTransaction, getFlights, createSeat, updateTransaction, updateSeat } from '../../services/api';
 import { toast } from 'react-toastify';
 
 const BookingFilters = ({ onFilter }) => {
@@ -8,7 +8,7 @@ const BookingFilters = ({ onFilter }) => {
     flightName: '',
     dateFrom: '',
     dateTo: '',
-    status: 'ALL'
+    status: 'BOOKED'
   });
 
   const handleSubmit = (e) => {
@@ -58,11 +58,12 @@ const BookingFilters = ({ onFilter }) => {
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
           >
-            <option value="ALL">Tất cả</option>
-            <option value="PENDING">Chờ xử lý</option>
-            <option value="COMPLETED">Hoàn tất</option>
-            <option value="CANCELLED">Đã hủy</option>
+            <option value="BOOKED">Đã đặt</option>
+            <option value="ONGOING">Đang thực hiện</option>
+            <option value="FREE">Tự do</option>
+            <option value="ONTIME">Đúng giờ</option>
             <option value="DELAY">Delay</option>
+            <option value="CANCEL">Đã hủy</option>
           </select>
         </div>
       </div>
@@ -83,15 +84,19 @@ const BookingStats = ({ data }) => {
   const stats = {
     totalBookings: data.length,
     totalRevenue: data.reduce((sum, booking) => {
+      if (booking.status === 'FREE' || booking.status === 'CANCEL') {
+        return sum;
+      }
       const price = parseFloat(booking.price || 0);
       return sum + (isNaN(price) ? 0 : price);
     }, 0),
-    averageBookingValue: data.length > 0 
-      ? data.reduce((sum, booking) => {
-          const price = parseFloat(booking.price || 0);
-          return sum + (isNaN(price) ? 0 : price);
-        }, 0) / data.length 
-      : 0
+    averageBookingValue: data.reduce((sum, booking) => {
+      if (booking.status === 'FREE' || booking.status === 'CANCEL') {
+        return sum;
+      }
+      const price = parseFloat(booking.price || 0);
+      return sum + (isNaN(price) ? 0 : price);
+    }, 0) / data.filter(booking => booking.status !== 'FREE' && booking.status !== 'CANCEL').length || 0
   };
 
   const formatCurrency = (amount) => {
@@ -123,12 +128,290 @@ const BookingStats = ({ data }) => {
   );
 };
 
+const BookingForm = ({ onSubmit, initialData = null, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    flightId: '',
+    seatName: '',
+    seatType: 'ECONOMY',
+    haveWindow: false,
+    pictureLink: '',
+    summary: '',
+    status: 'BOOKED',
+    price: '',
+    flight: null,
+    seat: null
+  });
+
+  const [flights, setFlights] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const flightsResponse = await getFlights();
+
+        if (flightsResponse.data) {
+          setFlights(Array.isArray(flightsResponse.data) ? flightsResponse.data : [flightsResponse.data]);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Không thể tải dữ liệu');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Cập nhật formData khi initialData thay đổi
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        flightId: initialData.flight?.id || '',
+        seatName: initialData.seat?.name || '',
+        seatType: initialData.seat?.type || 'ECONOMY',
+        haveWindow: initialData.seat?.haveWindow || false,
+        pictureLink: initialData.seat?.pictureLink || '',
+        summary: initialData.seat?.summary || '',
+        status: initialData.status || 'BOOKED',
+        price: initialData.price || '',
+        flight: initialData.flight,
+        seat: initialData.seat
+      });
+    }
+  }, [initialData]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.flightId || !formData.seatName || !formData.price) {
+      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      if (initialData) {
+        // 1. Cập nhật thông tin ghế trước
+        const seatData = {
+          id: initialData.seat.id,
+          name: formData.seatName,
+          type: formData.seatType,
+          haveWindow: formData.haveWindow,
+          pictureLink: formData.pictureLink,
+          summary: formData.summary,
+          createBy: initialData.seat.createBy,
+          createDate: initialData.seat.createDate,
+          isDeleted: initialData.seat.isDeleted,
+          updateBy: 'admin'
+        };
+
+        await updateSeat(seatData);
+
+        // 2. Sau đó cập nhật vé
+        const updateData = {
+          id: initialData.id,
+          createBy: initialData.createBy,
+          createDate: initialData.createDate,
+          updateBy: 'admin',
+          updateDate: new Date().toISOString(),
+          flight: initialData.flight,
+          seat: initialData.seat,
+          status: formData.status,
+          price: formData.price,
+          deleted: initialData.deleted
+        };
+        await updateTransaction(updateData);
+        toast.success('Cập nhật vé thành công');
+        onSuccess();
+      } else {
+        // Tạo vé mới
+        // 1. Tạo ghế mới trước
+        const seatData = {
+          name: formData.seatName,
+          type: formData.seatType,
+          haveWindow: formData.haveWindow,
+          pictureLink: formData.pictureLink,
+          summary: formData.summary,
+          createBy: 'admin',
+          updateBy: 'admin'
+        };
+
+        const seatResponse = await createSeat(seatData);
+        if (!seatResponse.data) {
+          throw new Error('Không thể tạo ghế');
+        }
+
+        // 2. Sau khi tạo ghế thành công, tạo đặt chỗ
+        const selectedFlight = flights.find(f => f.id === Number(formData.flightId));
+        const submitData = {
+          flight: selectedFlight,
+          seat: seatResponse.data,
+          status: formData.status,
+          price: formData.price,
+          createBy: 'admin',
+          updateBy: 'admin'
+        };
+
+        await onSubmit(submitData);
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Error creating/updating booking:', error);
+      toast.error('Có lỗi xảy ra khi tạo/cập nhật đặt chỗ');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md">
+      <h3 className="text-xl font-semibold mb-4">
+        {initialData ? 'Chỉnh sửa đặt chỗ' : 'Thêm đặt chỗ mới'}
+      </h3>
+      
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700">Chuyến bay</label>
+          <select
+            value={formData.flightId || ''}
+            onChange={(e) => setFormData({ ...formData, flightId: e.target.value })}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+            required
+          >
+            <option value="">Chọn chuyến bay</option>
+            {flights.map(flight => (
+              <option key={flight.id} value={flight.id}>
+                {flight.name} - {flight.departure} → {flight.arrival}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="border-t pt-4 mt-4">
+          <h4 className="text-lg font-medium text-gray-900 mb-4">Thông tin ghế</h4>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Tên ghế</label>
+              <input
+                type="text"
+                value={formData.seatName}
+                onChange={(e) => setFormData({ ...formData, seatName: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+                placeholder="Ví dụ: A1, B2, C3"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Loại ghế</label>
+              <select
+                value={formData.seatType}
+                onChange={(e) => setFormData({ ...formData, seatType: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+              >
+                <option value="ECONOMY">Economy</option>
+                <option value="BUSINESS">Business</option>
+                <option value="FIRST">First Class</option>
+              </select>
+            </div>
+
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="haveWindow"
+                checked={formData.haveWindow}
+                onChange={(e) => setFormData({ ...formData, haveWindow: e.target.checked })}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="haveWindow" className="ml-2 block text-sm text-gray-900">
+                Có cửa sổ
+              </label>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Link hình ảnh</label>
+              <input
+                type="text"
+                value={formData.pictureLink}
+                onChange={(e) => setFormData({ ...formData, pictureLink: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                placeholder="https://example.com/seat-image.jpg"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Mô tả</label>
+              <textarea
+                value={formData.summary}
+                onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                rows="3"
+                placeholder="Mô tả về ghế..."
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="border-t pt-4 mt-4">
+          <h4 className="text-lg font-medium text-gray-900 mb-4">Thông tin đặt chỗ</h4>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Trạng thái</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+              >
+                <option value="BOOKED">Đã đặt</option>
+                <option value="ONGOING">Đang thực hiện</option>
+                <option value="FREE">Tự do</option>
+                <option value="ONTIME">Đúng giờ</option>
+                <option value="DELAY">Delay</option>
+                <option value="CANCEL">Đã hủy</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Giá vé</label>
+              <input
+                type="number"
+                value={formData.price}
+                onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                required
+                placeholder="Nhập giá vé"
+              />
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+          disabled={loading}
+        >
+          {initialData ? 'Cập nhật' : 'Thêm mới'}
+        </button>
+      </div>
+    </form>
+  );
+};
+
 const Bookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [filters, setFilters] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [editingBooking, setEditingBooking] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -137,11 +420,13 @@ const Bookings = () => {
       
       if (filters) {
         if (filters.status === 'ALL') {
+          response = await getTransactions(page);
+        } else if (filters.flightName || filters.dateFrom || filters.dateTo) {
           response = await getTransactionsByConditions(
-            filters.flightName,
-            filters.dateFrom,
-            filters.dateTo,
-            null,
+            filters.flightName || '',
+            filters.dateFrom || '',
+            filters.dateTo || '',
+            filters.status,
             page,
             10
           );
@@ -157,8 +442,13 @@ const Bookings = () => {
         setTotalPages(Math.ceil(response.data.length / 10));
       }
     } catch (error) {
-      toast.error('Không thể tải dữ liệu: ' + (error.response?.data || error.message));
       console.error('Error fetching data:', error);
+      if (error.response?.status === 404) {
+        setBookings([]);
+        setTotalPages(0);
+      } else {
+        toast.error('Không thể tải dữ liệu: ' + (error.response?.data || error.message));
+      }
     } finally {
       setLoading(false);
     }
@@ -171,6 +461,35 @@ const Bookings = () => {
   const handleFilter = (newFilters) => {
     setFilters(newFilters);
     setPage(0);
+  };
+
+  const handleSubmit = async (formData) => {
+    try {
+      setLoading(true);
+      if (editingBooking) {
+        // Cập nhật vé
+        await updateTransaction(editingBooking.id, formData);
+        toast.success('Cập nhật vé thành công');
+      } else {
+        // Thêm vé mới
+        await createTransaction(formData);
+        toast.success('Thêm đặt chỗ thành công');
+      }
+      fetchData();
+      setShowForm(false);
+      setEditingBooking(null);
+    } catch (error) {
+      toast.error('Có lỗi xảy ra');
+      console.error('Error submitting booking:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSuccess = () => {
+    fetchData();
+    setShowForm(false);
+    setEditingBooking(null);
   };
 
   const formatDateTime = (dateString) => {
@@ -190,104 +509,162 @@ const Bookings = () => {
     }).format(amount);
   };
 
+  const handleAddNew = () => {
+    setEditingBooking(null);
+    setShowForm(false);
+    setTimeout(() => {
+      setShowForm(true);
+    }, 100);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
+        <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Quản lý đặt chỗ</h1>
+          <button
+            onClick={handleAddNew}
+            className="flex items-center bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+            disabled={loading}
+          >
+            <FaPlus className="mr-2" />
+            Thêm đặt chỗ
+          </button>
         </div>
 
         <BookingFilters onFilter={handleFilter} />
         <BookingStats data={bookings} />
 
-        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="overflow-x-auto">
-            {loading ? (
-              <div className="flex justify-center items-center h-32">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              </div>
-            ) : (
-              <>
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="text-left py-3 px-4 border-b">Mã đặt chỗ</th>
-                      <th className="text-left py-3 px-4 border-b">Khách hàng</th>
-                      <th className="text-left py-3 px-4 border-b">Chuyến bay</th>
-                      <th className="text-left py-3 px-4 border-b">Ngày đặt</th>
-                      <th className="text-left py-3 px-4 border-b">Trạng thái</th>
-                      <th className="text-right py-3 px-4 border-b">Tổng tiền</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bookings.map((booking) => (
-                      <tr key={booking.id} className="hover:bg-gray-50">
-                        <td className="py-3 px-4 border-b font-medium">
-                          {booking.id}
-                        </td>
-                        <td className="py-3 px-4 border-b">
-                          <div>{booking.user?.name}</div>
-                          <div className="text-sm text-gray-500">{booking.user?.email}</div>
-                        </td>
-                        <td className="py-3 px-4 border-b">
-                          <div>{booking.flight?.name}</div>
-                          <div className="text-sm text-gray-500">
-                            {booking.flight?.departure} → {booking.flight?.arrival}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 border-b">
-                          {formatDateTime(booking.createDate)}
-                        </td>
-                        <td className="py-3 px-4 border-b">
-                          <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              booking.status === 'COMPLETED'
-                                ? 'bg-green-100 text-green-800'
-                                : booking.status === 'PENDING'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : booking.status === 'DELAY'
-                                ? 'bg-orange-100 text-orange-800'
-                                : 'bg-red-100 text-red-800'
-                            }`}
-                          >
-                            {booking.status === 'COMPLETED'
-                              ? 'Hoàn tất'
-                              : booking.status === 'PENDING'
-                              ? 'Chờ xử lý'
-                              : booking.status === 'DELAY'
-                              ? 'Delay'
-                              : 'Đã hủy'}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 border-b text-right">
-                          {formatCurrency(booking.price)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {totalPages > 1 && (
-                  <div className="flex justify-center py-4 gap-2">
-                    {Array.from({ length: totalPages }).map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setPage(index)}
-                        className={`px-3 py-1 rounded ${
-                          page === index
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 hover:bg-gray-300'
-                        }`}
-                        disabled={loading}
-                      >
-                        {index + 1}
-                      </button>
-                    ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="overflow-x-auto">
+                {loading ? (
+                  <div className="flex justify-center items-center h-32">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
                   </div>
+                ) : (
+                  <>
+                    {bookings.length === 0 ? (
+                      <div className="flex justify-center items-center h-32 text-gray-500">
+                        Không tìm thấy vé
+                      </div>
+                    ) : (
+                      <>
+                        <table className="min-w-full">
+                          <thead>
+                            <tr className="bg-gray-50">
+                              <th className="text-left py-3 px-4 border-b">Mã đặt chỗ</th>
+                              <th className="text-left py-3 px-4 border-b">Khách hàng</th>
+                              <th className="text-left py-3 px-4 border-b">Chuyến bay</th>
+                              <th className="text-left py-3 px-4 border-b">Ngày đặt</th>
+                              <th className="text-left py-3 px-4 border-b">Trạng thái</th>
+                              <th className="text-right py-3 px-4 border-b">Tổng tiền</th>
+                              <th className="text-right py-3 px-4 border-b">Thao tác</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {bookings.map((booking) => (
+                              <tr key={booking.id} className="hover:bg-gray-50">
+                                <td className="py-3 px-4 border-b font-medium">
+                                  {booking.id}
+                                </td>
+                                <td className="py-3 px-4 border-b">
+                                  <div>{booking.user?.name}</div>
+                                  <div className="text-sm text-gray-500">{booking.user?.email}</div>
+                                </td>
+                                <td className="py-3 px-4 border-b">
+                                  <div>{booking.flight?.name}</div>
+                                  <div className="text-sm text-gray-500">
+                                    {booking.flight?.departure} → {booking.flight?.arrival}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-4 border-b">
+                                  {formatDateTime(booking.createDate)}
+                                </td>
+                                <td className="py-3 px-4 border-b">
+                                  <span
+                                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                      booking.status === 'BOOKED'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : booking.status === 'ONGOING'
+                                        ? 'bg-yellow-100 text-yellow-800'
+                                        : booking.status === 'FREE'
+                                        ? 'bg-green-100 text-green-800'
+                                        : booking.status === 'ONTIME'
+                                        ? 'bg-green-100 text-green-800'
+                                        : booking.status === 'DELAY'
+                                        ? 'bg-orange-100 text-orange-800'
+                                        : 'bg-red-100 text-red-800'
+                                    }`}
+                                  >
+                                    {booking.status === 'BOOKED'
+                                      ? 'Đã đặt'
+                                      : booking.status === 'ONGOING'
+                                      ? 'Đang thực hiện'
+                                      : booking.status === 'FREE'
+                                      ? 'Tự do'
+                                      : booking.status === 'ONTIME'
+                                      ? 'Đúng giờ'
+                                      : booking.status === 'DELAY'
+                                      ? 'Delay'
+                                      : 'Đã hủy'}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 border-b text-right">
+                                  {formatCurrency(booking.price)}
+                                </td>
+                                <td className="py-3 px-4 border-b text-right">
+                                  <button
+                                    onClick={() => {
+                                      setEditingBooking(booking);
+                                      setShowForm(true);
+                                    }}
+                                    className="text-blue-600 hover:text-blue-800"
+                                  >
+                                    Cập nhật
+                                  </button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+
+                        {totalPages > 1 && (
+                          <div className="flex justify-center py-4 gap-2">
+                            {Array.from({ length: totalPages }).map((_, index) => (
+                              <button
+                                key={index}
+                                onClick={() => setPage(index)}
+                                className={`px-3 py-1 rounded ${
+                                  page === index
+                                    ? 'bg-blue-600 text-white'
+                                    : 'bg-gray-200 hover:bg-gray-300'
+                                }`}
+                                disabled={loading}
+                              >
+                                {index + 1}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </>
                 )}
-              </>
-            )}
+              </div>
+            </div>
           </div>
+
+          {showForm && (
+            <div className="lg:col-span-1">
+              <BookingForm
+                onSubmit={handleSubmit}
+                initialData={editingBooking}
+                onSuccess={handleSuccess}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

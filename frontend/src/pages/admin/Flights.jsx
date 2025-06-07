@@ -22,6 +22,24 @@ const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
   });
 
   useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        planeId: initialData.plane?.id || '',
+        plane: initialData.plane || null,
+        startTime: initialData.startTime ? new Date(initialData.startTime).toISOString().slice(0, 16) : '',
+        endTime: initialData.endTime ? new Date(initialData.endTime).toISOString().slice(0, 16) : '',
+        status: initialData.status || 'OPEN',
+        departure: initialData.departure || '',
+        departureCode: initialData.departureCode || '',
+        arrival: initialData.arrival || '',
+        arrivalCode: initialData.arrivalCode || '',
+        gate: initialData.gate || ''
+      });
+    }
+  }, [initialData]);
+
+  useEffect(() => {
     console.log('Current formData:', formData);
   }, [formData]);
 
@@ -63,15 +81,13 @@ const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
 
   const handlePlaneChange = (e) => {
     const selectedPlaneId = e.target.value;
-    console.log('Selected plane ID:', selectedPlaneId, 'Type:', typeof selectedPlaneId);
-    setFormData(prev => {
-      const newData = {
-        ...prev,
-        planeId: selectedPlaneId
-      };
-      console.log('New form data after plane change:', newData);
-      return newData;
-    });
+    const selectedPlane = planes.find(p => p.id === Number(selectedPlaneId));
+    console.log('Selected plane:', selectedPlane);
+    setFormData(prev => ({
+      ...prev,
+      planeId: selectedPlaneId,
+      plane: selectedPlane
+    }));
   };
 
   return (
@@ -105,9 +121,9 @@ const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
               planes.map(plane => {
                 console.log('Rendering plane option:', plane);
                 return (
-                  <option key={plane.id} value={plane.id}>
+              <option key={plane.id} value={plane.id}>
                     {plane.name} - {plane.producer}
-                  </option>
+              </option>
                 );
               })
             ) : (
@@ -202,12 +218,12 @@ const FlightForm = ({ onSubmit, initialData = null, planes = [] }) => {
 
         <div>
           <label className="block text-sm font-medium text-gray-700">Cổng</label>
-          <input
+            <input
             type="text"
             value={formData.gate || ''}
             onChange={(e) => setFormData({ ...formData, gate: e.target.value })}
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-          />
+            />
         </div>
 
         <button
@@ -251,7 +267,7 @@ const Flights = () => {
         setPlanes([]);
         toast.warning('Chưa có dữ liệu tàu bay');
       } else {
-        setPlanes(planesResponse.data);
+      setPlanes(planesResponse.data);
       }
 
       // Kiểm tra và xử lý dữ liệu flights
@@ -290,7 +306,26 @@ const Flights = () => {
     try {
       setLoading(true);
       if (editingFlight) {
-        await updateFlight(editingFlight.id, formData);
+        // Cập nhật chuyến bay
+        const updateData = {
+          id: editingFlight.id,
+          createBy: editingFlight.createBy,
+          createDate: editingFlight.createDate,
+          updateBy: 'admin',
+          updateDate: new Date().toISOString(),
+          name: formData.name,
+          plane: formData.plane,
+          startTime: formData.startTime,
+          endTime: formData.endTime,
+          status: formData.status,
+          departure: formData.departure,
+          departureCode: formData.departureCode,
+          arrival: formData.arrival,
+          arrivalCode: formData.arrivalCode,
+          gate: formData.gate,
+          deleted: editingFlight.deleted
+        };
+        await updateFlight(updateData);
         toast.success('Cập nhật chuyến bay thành công');
       } else {
         await createFlight(formData);
@@ -311,8 +346,8 @@ const Flights = () => {
     setShowForm(false);
     setEditingFlight(null);
     setTimeout(() => {
-      setEditingFlight(item);
-      setShowForm(true);
+    setEditingFlight(item);
+    setShowForm(true);
     }, 100);
   };
 
@@ -351,16 +386,21 @@ const Flights = () => {
     }).format(price);
   };
 
+  const handleAddNew = () => {
+    setEditingFlight(null);
+    setShowForm(false);
+    setTimeout(() => {
+      setShowForm(true);
+    }, 100);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Quản lý chuyến bay</h1>
           <button
-            onClick={() => {
-              setEditingFlight(null);
-              setShowForm(true);
-            }}
+            onClick={handleAddNew}
             className="flex items-center bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
             disabled={loading}
           >

@@ -168,8 +168,8 @@ const News = () => {
     setShowForm(false);
     setEditingNews(null);
     setTimeout(() => {
-      setEditingNews(item);
-      setShowForm(true);
+    setEditingNews(item);
+    setShowForm(true);
     }, 100);
   };
 
@@ -191,16 +191,21 @@ const News = () => {
     }
   };
 
+  const handleAddNew = () => {
+    setEditingNews(null);
+    setShowForm(false);
+    setTimeout(() => {
+      setShowForm(true);
+    }, 100);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Quản lý tin tức</h1>
           <button
-            onClick={() => {
-              setEditingNews(null);
-              setShowForm(true);
-            }}
+            onClick={handleAddNew}
             className="flex items-center bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
             disabled={loading}
           >
