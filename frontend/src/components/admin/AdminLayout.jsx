@@ -10,7 +10,6 @@ const Sidebar = () => {
     { path: '/admin/planes', icon: FaPlane, label: 'Tàu bay' },
     { path: '/admin/flights', icon: FaCalendarAlt, label: 'Chuyến bay' },
     { path: '/admin/bookings', icon: FaTicketAlt, label: 'Đặt vé' },
-    { path: '/admin/delays', icon: FaClock, label: 'Delay' },
   ];
 
   return (

@@ -20,7 +20,6 @@ import NewsDetail from "./pages/NewsDetail";
 import Planes from "./pages/admin/Planes";
 import AdminFlights from "./pages/admin/Flights";
 import Bookings from "./pages/admin/Bookings";
-import Delays from "./pages/admin/Delays";
 import AllFlightDeals from './pages/AllFlightDeals';
 import AllPlaces from './pages/AllPlaces';
 import AllNews from './pages/AllNews';
@@ -48,7 +47,6 @@ const App = () => {
                         <Route path="planes" element={<Planes />} />
                         <Route path="flights" element={<AdminFlights />} />
                         <Route path="bookings" element={<Bookings />} />
-                        <Route path="delays" element={<Delays />} />
                     </Route>
 
                     {/* Client routes */}
