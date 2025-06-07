@@ -24,6 +24,8 @@ import AllFlightDeals from './pages/AllFlightDeals';
 import AllPlaces from './pages/AllPlaces';
 import AllNews from './pages/AllNews';
 import PlaceDetail from './pages/PlaceDetail';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const ClientLayout = () => {
     return (
@@ -37,11 +39,15 @@ const ClientLayout = () => {
 
 const App = () => {
     return (
-        <>
+        <AuthProvider>
             <div className="font-Nunito overflow-hidden max-w-[1440px] mx-auto">
                 <Routes>
                     {/* Admin routes */}
-                    <Route path="/admin" element={<AdminLayout />}>
+                    <Route path="/admin" element={
+                        <ProtectedRoute>
+                            <AdminLayout />
+                        </ProtectedRoute>
+                    }>
                         <Route index element={<Dashboard />} />
                         <Route path="news" element={<News />} />
                         <Route path="planes" element={<Planes />} />
@@ -80,7 +86,7 @@ const App = () => {
                     theme="dark"
                 />
             </div>
-        </>
+        </AuthProvider>
     );
 };
 

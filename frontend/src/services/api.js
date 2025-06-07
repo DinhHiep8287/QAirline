@@ -84,4 +84,7 @@ export const deleteTransaction = (id) =>
 export const getTransactionsByFlight = (flightId) => 
   api.get(`/transaction/flight?flightId=${flightId}`);
 
+export const getUserById = (userId) => 
+  api.get(`/user/id?id=${userId}`);
+
 export default api; 
