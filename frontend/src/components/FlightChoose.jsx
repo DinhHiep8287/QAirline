@@ -144,7 +144,7 @@ const FlightChoose = ({ searchData }) => {
 
           {/* Flight Details and Ticket Classes */}
           <div className="mt-6 pt-6 border-t border-gray-100">
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-3 gap-4 mb-4">
               {/* Economy Class */}
               <div className="relative bg-green-50 rounded-lg p-4">
                 <div className="absolute top-2 right-2 bg-green-700 text-white text-xs px-2 py-1 rounded">
@@ -164,6 +164,17 @@ const FlightChoose = ({ searchData }) => {
                 <h3 className="text-lg font-semibold text-gray-800 mb-1">Business</h3>
                 <p className="text-xl font-bold text-[#1A1D1F]">
                   {formatCurrency(flight.businessPrice)} <span className="text-sm text-gray-500">VND</span>
+                </p>
+              </div>
+
+              {/* First Class */}
+              <div className="relative bg-purple-50 rounded-lg p-4">
+                <div className="absolute top-2 right-2 bg-purple-700 text-white text-xs px-2 py-1 rounded">
+                  {flight.firstSeatsAvailable} chỗ còn lại
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800 mb-1">First Class</h3>
+                <p className="text-xl font-bold text-[#1A1D1F]">
+                  {formatCurrency(flight.firstPrice)} <span className="text-sm text-gray-500">VND</span>
                 </p>
               </div>
             </div>
