@@ -4,11 +4,14 @@ import { format, parseISO } from "date-fns";
 import { vi } from "date-fns/locale";
 import { formatCurrency } from "../utils/format";
 import { FaPlane, FaUser, FaEnvelope, FaPhone, FaCalendar, FaVenusMars, FaMapMarkerAlt } from "react-icons/fa";
+import { updateTransactions, getUserByEmail } from "../services/api";
+import { toast } from "react-toastify";
 
 const FlightConfirm = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [bookingData, setBookingData] = useState(null);
+  const [isBooking, setIsBooking] = useState(false);
 
   useEffect(() => {
     // Get booking data from localStorage
@@ -20,6 +23,68 @@ const FlightConfirm = () => {
     setBookingData(JSON.parse(data));
   }, [navigate]);
 
+  const handleBooking = async () => {
+    try {
+      setIsBooking(true);
+      const { selectedSeats, passengers } = bookingData;
+
+      // Lấy thông tin người dùng từ email của passenger đầu tiên
+      const firstPassenger = passengers[0];
+      const userResponse = await getUserByEmail(firstPassenger.email);
+      const userInfo = userResponse.data;
+
+      // Tạo list transactions từ selectedSeats với thông tin user đã lấy
+      const transactions = selectedSeats.map((seat) => {
+        return {
+          id: seat.id,
+          createBy: seat.createBy,
+          createDate: seat.createDate,
+          updateBy: 'admin',
+          updateDate: new Date().toISOString(),
+          user: {
+            id: userInfo.id,
+            createBy: userInfo.createBy,
+            createDate: userInfo.createDate,
+            updateBy: userInfo.updateBy,
+            updateDate: userInfo.updateDate,
+            email: userInfo.email,
+            name: userInfo.name,
+            birthday: userInfo.birthday,
+            phoneNum: userInfo.phoneNum,
+            gender: userInfo.gender,
+            address: userInfo.address,
+            role: userInfo.role,
+            idNumber: userInfo.idNumber,
+            forgotten: userInfo.forgotten,
+            deleted: userInfo.deleted
+          },
+          flight: seat.flight,
+          seat: seat.seat,
+          status: 'BOOKED',
+          price: seat.price,
+          deleted: seat.deleted
+        };
+      });
+
+      console.log('Sending transactions list:', transactions);
+      await updateTransactions(transactions);
+
+      toast.success('Đặt vé thành công!');
+      // Xóa dữ liệu booking khỏi localStorage
+      localStorage.removeItem('currentBooking');
+      // Chuyển hướng đến trang chọn ghế
+      navigate(`/booking-history`);
+    } catch (error) {
+      console.error('Error booking tickets:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
+      toast.error('Có lỗi xảy ra khi đặt vé. Vui lòng thử lại.');
+    } finally {
+      setIsBooking(false);
+    }
+  };
+
   if (!bookingData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -28,7 +93,7 @@ const FlightConfirm = () => {
     );
   }
 
-  const { flight, passenger, seatClass, price } = bookingData;
+  const { flight, passengers, seatClass, price } = bookingData;
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -85,55 +150,58 @@ const FlightConfirm = () => {
             {/* Passenger Information */}
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Thông tin hành khách</h2>
-              <div className="bg-gray-50 rounded-lg p-4">
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="flex items-center gap-3">
-                    <FaUser className="text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500">Họ và tên</p>
-                      <p className="font-medium text-gray-900">{passenger.name}</p>
+              {passengers.map((passenger, index) => (
+                <div key={index} className="bg-gray-50 rounded-lg p-4 mb-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Hành khách {index + 1}</h3>
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="flex items-center gap-3">
+                      <FaUser className="text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Họ và tên</p>
+                        <p className="font-medium text-gray-900">{passenger.name}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <FaEnvelope className="text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500">Email</p>
-                      <p className="font-medium text-gray-900">{passenger.email}</p>
+                    <div className="flex items-center gap-3">
+                      <FaEnvelope className="text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Email</p>
+                        <p className="font-medium text-gray-900">{passenger.email}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <FaPhone className="text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500">Số điện thoại</p>
-                      <p className="font-medium text-gray-900">{passenger.phoneNum}</p>
+                    <div className="flex items-center gap-3">
+                      <FaPhone className="text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Số điện thoại</p>
+                        <p className="font-medium text-gray-900">{passenger.phoneNum}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <FaCalendar className="text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500">Ngày sinh</p>
-                      <p className="font-medium text-gray-900">{format(new Date(passenger.birthday), "dd/MM/yyyy")}</p>
+                    <div className="flex items-center gap-3">
+                      <FaCalendar className="text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Ngày sinh</p>
+                        <p className="font-medium text-gray-900">{format(new Date(passenger.birthday), "dd/MM/yyyy")}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <FaVenusMars className="text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500">Giới tính</p>
-                      <p className="font-medium text-gray-900">
-                        {passenger.gender === 'MALE' ? 'Nam' : 
-                         passenger.gender === 'FEMALE' ? 'Nữ' : 'Khác'}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <FaVenusMars className="text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Giới tính</p>
+                        <p className="font-medium text-gray-900">
+                          {passenger.gender === 'MALE' ? 'Nam' : 
+                           passenger.gender === 'FEMALE' ? 'Nữ' : 'Khác'}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <FaMapMarkerAlt className="text-gray-400" />
-                    <div>
-                      <p className="text-sm text-gray-500">Địa chỉ</p>
-                      <p className="font-medium text-gray-900">{passenger.address}</p>
+                    <div className="flex items-center gap-3">
+                      <FaMapMarkerAlt className="text-gray-400" />
+                      <div>
+                        <p className="text-sm text-gray-500">Địa chỉ</p>
+                        <p className="font-medium text-gray-900">{passenger.address}</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
 
             {/* Ticket Information */}
@@ -162,10 +230,11 @@ const FlightConfirm = () => {
                 Quay lại
               </button>
               <button
-                onClick={() => navigate(`/flight/${id}/seat-selection`)}
-                className="px-6 py-2 bg-[#605DEC] text-white rounded-lg hover:bg-[#4B48BF] transition-colors"
+                onClick={handleBooking}
+                disabled={isBooking}
+                className="px-6 py-2 bg-[#605DEC] text-white rounded-lg hover:bg-[#4B48BF] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Tiếp tục
+                {isBooking ? 'Đang xử lý...' : 'Đặt vé'}
               </button>
             </div>
           </div>
