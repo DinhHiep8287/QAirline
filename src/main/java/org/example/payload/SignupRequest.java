@@ -8,7 +8,7 @@ import lombok.Setter;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Date;
+import java.sql.Date;
 
 @Getter
 @Setter
@@ -23,4 +23,18 @@ public class SignupRequest {
     @Size(min = 6, max = 40)
     private String password;
 
+    @NotBlank
+    private String name;
+
+    private String IdNumber;
+
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
+    private Date birthday;
+
+    @NotBlank
+    private String phoneNum;
+
+    private String gender;
+
+    private String address;
 }

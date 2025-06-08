@@ -1,13 +1,15 @@
 import axios from 'axios';
 
+const API_URL = 'http://localhost:8080/api/v1';
+
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api/v1',
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// Add a request interceptor to include the token in requests
+// Add a request interceptor to add the auth token to requests
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -36,13 +38,13 @@ api.interceptors.response.use(
 
 // Auth APIs
 export const login = (credentials) => api.post('/auth/login', credentials);
-export const register = (userData) => api.post('/auth/register', userData);
+export const signup = (userData) => api.post('/auth/signup', userData);
 export const forgotPassword = (email) => api.post('/auth/forgetP', { email });
-export const changePassword = (changePasswordData) => api.put('/auth/changeP', changePasswordData);
+export const changePassword = (data) => api.put('/auth/changeP', data);
 
 // User APIs
-export const getUserByEmail = (email) => api.get(`/users/email/${email}`);
-export const updateUser = (userId, userData) => api.put(`/users/${userId}`, userData);
+export const getUserByEmail = (email) => api.get(`/user/email?email=${email}`);
+export const updateUser = (userData) => api.put('/user', userData);
 
 // News APIs
 export const getNews = (page = 0, size = 10) => 

@@ -38,7 +38,7 @@ public class AuthController {
             JwtResponse jwtResponse = new JwtResponse(jwtUtils.generateJwtToken(user.getEmail()),
                     user.getId(),
                     user.getEmail(),
-                    user.getEmail());
+                    user.getName());
             return ResponseEntity.ok().body(jwtResponse);
         } catch(Exception e){
             return ResponseEntity.badRequest()
@@ -59,8 +59,12 @@ public class AuthController {
             User user = new User();
             user.setEmail(signUpRequest.getEmail());
             user.setPassword(signUpRequest.getPassword());
-            user.setName(signUpRequest.getEmail());
-            user.setIdNumber(UUID.randomUUID().toString());
+            user.setName(signUpRequest.getName());
+            user.setIdNumber(signUpRequest.getIdNumber());
+            user.setBirthday(signUpRequest.getBirthday());
+            user.setPhoneNum(signUpRequest.getPhoneNum());
+            user.setGender(signUpRequest.getGender());
+            user.setAddress(signUpRequest.getAddress());
 
             userService.saveUser(user);
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FaUser, FaEnvelope, FaIdCard, FaKey } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaIdCard, FaKey, FaPhone, FaCalendar, FaVenusMars, FaMapMarkerAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
 import { getUserByEmail, updateUser, changePassword } from '../services/api';
@@ -14,31 +14,56 @@ const ProfileSection = ({ title, children }) => (
   </div>
 );
 
-const InputField = ({ icon: Icon, label, type = "text", value, onChange, disabled = false, error = "" }) => (
-  <div className="space-y-1">
-    <label className="block text-sm font-medium text-gray-700">{label}</label>
-    <div className="relative rounded-lg shadow-sm">
-      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-        <Icon className="h-5 w-5 text-gray-400" />
+const InputField = ({ icon: Icon, label, type = "text", value, onChange, disabled = false, error = "", as = "input" }) => {
+  const commonClasses = `block w-full pl-10 pr-3 py-2 sm:text-sm rounded-lg
+    ${disabled 
+      ? 'bg-gray-100 text-gray-500 cursor-not-allowed' 
+      : 'bg-white focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]'
+    }
+    ${error ? 'border-red-300' : 'border-gray-300'}
+    transition-colors duration-200
+  `;
+
+  return (
+    <div className="space-y-1">
+      <label className="block text-sm font-medium text-gray-700">{label}</label>
+      <div className="relative rounded-lg shadow-sm">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Icon className="h-5 w-5 text-gray-400" />
+        </div>
+        {as === "select" ? (
+          <select
+            value={value || ''}
+            onChange={onChange}
+            disabled={disabled}
+            className={commonClasses}
+          >
+            <option value="">Chọn giới tính</option>
+            <option value="male">Nam</option>
+            <option value="female">Nữ</option>
+            <option value="other">Khác</option>
+          </select>
+        ) : as === "textarea" ? (
+          <textarea
+            value={value || ''}
+            onChange={onChange}
+            disabled={disabled}
+            className={`${commonClasses} resize-none h-20`}
+          />
+        ) : (
+          <input
+            type={type}
+            value={value || ''}
+            onChange={onChange}
+            disabled={disabled}
+            className={commonClasses}
+          />
+        )}
       </div>
-      <input
-        type={type}
-        value={value || ''}
-        onChange={onChange}
-        disabled={disabled}
-        className={`block w-full pl-10 pr-3 py-2 sm:text-sm rounded-lg
-          ${disabled 
-            ? 'bg-gray-100 text-gray-500 cursor-not-allowed' 
-            : 'bg-white focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]'
-          }
-          ${error ? 'border-red-300' : 'border-gray-300'}
-          transition-colors duration-200
-        `}
-      />
+      {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
     </div>
-    {error && <p className="text-sm text-red-600 mt-1">{error}</p>}
-  </div>
-);
+  );
+};
 
 const Profile = () => {
   const { user, setUser } = useAuth();
@@ -49,6 +74,10 @@ const Profile = () => {
     name: '',
     email: '',
     idNumber: '',
+    birthday: '',
+    phoneNum: '',
+    gender: '',
+    address: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
@@ -65,6 +94,10 @@ const Profile = () => {
             name: userData.name || '',
             email: userData.email || '',
             idNumber: userData.idNumber || '',
+            birthday: userData.birthday ? new Date(userData.birthday).toISOString().split('T')[0] : '',
+            phoneNum: userData.phoneNum || '',
+            gender: userData.gender || '',
+            address: userData.address || '',
             currentPassword: '',
             newPassword: '',
             confirmPassword: ''
@@ -81,7 +114,6 @@ const Profile = () => {
 
   const handleInputChange = (field) => (e) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
@@ -110,6 +142,21 @@ const Profile = () => {
       }
     }
 
+    if (isEditing) {
+      if (!formData.phoneNum) {
+        newErrors.phoneNum = 'Vui lòng nhập số điện thoại';
+      }
+      if (!formData.birthday) {
+        newErrors.birthday = 'Vui lòng chọn ngày sinh';
+      }
+      if (!formData.gender) {
+        newErrors.gender = 'Vui lòng chọn giới tính';
+      }
+      if (!formData.address) {
+        newErrors.address = 'Vui lòng nhập địa chỉ';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -123,7 +170,6 @@ const Profile = () => {
 
     try {
       if (isChangingPassword) {
-        // Handle password change
         try {
           await changePassword({
             email: user.email,
@@ -156,12 +202,15 @@ const Profile = () => {
           return;
         }
       } else {
-        // Handle profile update
         const updateData = {
           id: user.id,
           email: user.email,
           name: formData.name,
-          idNumber: user.idNumber,
+          idNumber: formData.idNumber,
+          birthday: formData.birthday,
+          phoneNum: formData.phoneNum,
+          gender: formData.gender,
+          address: formData.address,
           role: user.role,
           createBy: user.createBy,
           createDate: user.createDate,
@@ -173,7 +222,6 @@ const Profile = () => {
         
         const response = await updateUser(updateData);
         if (response.data === "Edited") {
-          // Fetch updated user data
           const updatedUserResponse = await getUserByEmail(user.email);
           setUser(updatedUserResponse.data);
           toast.success('Cập nhật thông tin thành công!');
@@ -249,6 +297,43 @@ const Profile = () => {
                   value={formData.idNumber}
                   disabled={true}
                 />
+                <InputField
+                  icon={FaPhone}
+                  label="Số điện thoại"
+                  value={formData.phoneNum}
+                  onChange={handleInputChange('phoneNum')}
+                  disabled={!isEditing}
+                  error={errors.phoneNum}
+                />
+                <InputField
+                  icon={FaCalendar}
+                  label="Ngày sinh"
+                  type="date"
+                  value={formData.birthday}
+                  onChange={handleInputChange('birthday')}
+                  disabled={!isEditing}
+                  error={errors.birthday}
+                />
+                <InputField
+                  icon={FaVenusMars}
+                  label="Giới tính"
+                  value={formData.gender}
+                  onChange={handleInputChange('gender')}
+                  disabled={!isEditing}
+                  error={errors.gender}
+                  as="select"
+                />
+                <div className="md:col-span-2">
+                  <InputField
+                    icon={FaMapMarkerAlt}
+                    label="Địa chỉ"
+                    value={formData.address}
+                    onChange={handleInputChange('address')}
+                    disabled={!isEditing}
+                    error={errors.address}
+                    as="textarea"
+                  />
+                </div>
               </div>
             </ProfileSection>
 
