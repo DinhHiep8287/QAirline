@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.example.constant.Role;
 
+import java.sql.Date;
+
 @Table(name = "USER")
 @Entity
 @AllArgsConstructor
@@ -25,6 +27,18 @@ public class User extends BaseObject{
 
     @Column(name = "ID_NUMBER")
     private String IdNumber;
+
+    @Column(name = "BIRTHDAY")
+    private Date birthday ;
+
+    @Column(name = "PHONE_NUMBER")
+    private String phoneNum;
+
+    @Column(name = "GENDER")
+    private String gender;
+
+    @Column(name = "ADDRESS")
+    private String address;
 
     @Column(name = "ROLE", nullable = false)
     private Role role = Role.USER;
