@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { searchFlights } from "../services/api";
+import { searchFlights, getTransactionsByFlight } from "../services/api";
 import { format, parseISO, differenceInMinutes } from "date-fns";
 import { toast } from "react-toastify";
 import { vi } from "date-fns/locale";
@@ -11,6 +11,76 @@ const FlightChoose = ({ searchData }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState("time_asc");
+  const [seatPrice, setSeatPrice] = useState({});
+
+  const calculateAvailableSeats = async (flightId) => {
+    try {
+      // Lấy tất cả transactions của chuyến bay
+      const transactionsResponse = await getTransactionsByFlight(flightId);
+      console.log('Transactions response:', transactionsResponse); // Debug log
+
+      // Số ghế trống của mỗi hạng
+      const availableSeats = {
+        ECONOMY: 0,
+        BUSINESS: 0,
+        FIRST: 0
+      };
+
+      // Lưu giá vé cho từng hạng
+      const seatPrices = {
+        ECONOMY: 0,
+        BUSINESS: 0,
+        FIRST: 0
+      };
+
+      // Đếm số ghế FREE và lấy giá vé
+      if (transactionsResponse.data) {
+        transactionsResponse.data.forEach(transaction => {
+          const seatClass = transaction.seat?.type;
+          console.log('Transaction:', transaction); // Debug log
+          console.log('Seat class:', seatClass); // Debug log
+          
+          // Chỉ xử lý nếu có seatClass và là một trong các hạng ghế hợp lệ
+          if (seatClass && ['ECONOMY', 'BUSINESS', 'FIRST'].includes(seatClass)) {
+            // Nếu là ghế FREE thì tăng số ghế trống
+            if (transaction.status === 'FREE') {
+              availableSeats[seatClass]++;
+              
+              // Lưu giá vé nếu chưa có
+              if (seatPrices[seatClass] === 0) {
+                seatPrices[seatClass] = transaction.price || 0;
+              }
+            }
+          }
+        });
+      }
+
+      console.log('Available seats:', availableSeats); // Debug log
+      console.log('Seat prices:', seatPrices); // Debug log
+
+      const result = {
+        economySeatsAvailable: availableSeats.ECONOMY,
+        businessSeatsAvailable: availableSeats.BUSINESS,
+        firstSeatsAvailable: availableSeats.FIRST,
+        economyPrice: seatPrices.ECONOMY,
+        businessPrice: seatPrices.BUSINESS,
+        firstPrice: seatPrices.FIRST
+      };
+
+      console.log('Result:', result); // Debug log
+      return result;
+    } catch (error) {
+      console.error('Error calculating available seats:', error);
+      return {
+        economySeatsAvailable: 0,
+        businessSeatsAvailable: 0,
+        firstSeatsAvailable: 0,
+        economyPrice: 0,
+        businessPrice: 0,
+        firstPrice: 0
+      };
+    }
+  };
 
   useEffect(() => {
     const fetchFlights = async () => {
@@ -35,6 +105,13 @@ const FlightChoose = ({ searchData }) => {
 
         if (response.data.status === "SUCCESS") {
           setFlights(response.data.data);
+          // Tính số ghế trống cho tất cả chuyến bay
+          const seatsInfo = {};
+          for (const flight of response.data.data) {
+            const seats = await calculateAvailableSeats(flight.id);
+            seatsInfo[flight.id] = seats;
+          }
+          setSeatPrice(seatsInfo);
         } else {
           setError(response.data.message || "Không thể tìm thấy chuyến bay phù hợp");
           toast.error(response.data.message || "Không thể tìm thấy chuyến bay phù hợp");
@@ -87,6 +164,14 @@ const FlightChoose = ({ searchData }) => {
       CANCELLED: { bg: "bg-red-100", text: "text-red-800", border: "border-red-200" }
     };
     const status = statusColors[flight.status] || statusColors.OPEN;
+    const flightSeats = seatPrice[flight.id] || {
+      economySeatsAvailable: 0,
+      businessSeatsAvailable: 0,
+      firstSeatsAvailable: 0,
+      economyPrice: 0,
+      businessPrice: 0,
+      firstPrice: 0
+    };
 
     return (
       <div key={flight.id} className="bg-white rounded-xl shadow-lg border border-gray-100 hover:border-[#605DEC] transition-all duration-300 overflow-hidden">
@@ -148,33 +233,33 @@ const FlightChoose = ({ searchData }) => {
               {/* Economy Class */}
               <div className="relative bg-green-50 rounded-lg p-4">
                 <div className="absolute top-2 right-2 bg-green-700 text-white text-xs px-2 py-1 rounded">
-                  {flight.economySeatsAvailable} chỗ còn lại
+                  {flightSeats.economySeatsAvailable} chỗ còn lại
                 </div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-1">Economy</h3>
                 <p className="text-xl font-bold text-[#1A1D1F]">
-                  {formatCurrency(flight.economyPrice)} <span className="text-sm text-gray-500">VND</span>
+                  {formatCurrency(flightSeats.economyPrice)} <span className="text-sm text-gray-500">VND</span>
                 </p>
               </div>
 
               {/* Business Class */}
               <div className="relative bg-blue-50 rounded-lg p-4">
                 <div className="absolute top-2 right-2 bg-blue-700 text-white text-xs px-2 py-1 rounded">
-                  {flight.businessSeatsAvailable} chỗ còn lại
+                  {flightSeats.businessSeatsAvailable} chỗ còn lại
                 </div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-1">Business</h3>
                 <p className="text-xl font-bold text-[#1A1D1F]">
-                  {formatCurrency(flight.businessPrice)} <span className="text-sm text-gray-500">VND</span>
+                  {formatCurrency(flightSeats.businessPrice)} <span className="text-sm text-gray-500">VND</span>
                 </p>
               </div>
 
               {/* First Class */}
               <div className="relative bg-purple-50 rounded-lg p-4">
                 <div className="absolute top-2 right-2 bg-purple-700 text-white text-xs px-2 py-1 rounded">
-                  {flight.firstSeatsAvailable} chỗ còn lại
+                  {flightSeats.firstSeatsAvailable} chỗ còn lại
                 </div>
                 <h3 className="text-lg font-semibold text-gray-800 mb-1">First Class</h3>
                 <p className="text-xl font-bold text-[#1A1D1F]">
-                  {formatCurrency(flight.firstPrice)} <span className="text-sm text-gray-500">VND</span>
+                  {formatCurrency(flightSeats.firstPrice)} <span className="text-sm text-gray-500">VND</span>
                 </p>
               </div>
             </div>
