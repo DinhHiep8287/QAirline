@@ -57,13 +57,14 @@ export const getFlightById = (id) => api.get(`/flight/id?id=${id}`);
 export const createFlight = (flightData) => api.post('/flight', flightData);
 export const updateFlight = (flightData) => api.put('/flight', flightData);
 export const deleteFlight = (id) => api.delete(`/flight?id=${id}`);
-export const searchFlights = (params) => 
-  api.get('/flight/search', { params });
+export const searchFlights = (searchTerm, dateFrom, dateTo, departure, arrival, page = 0, size = 10) => 
+  api.get(`/flight/conditions?flightName=${encodeURIComponent(searchTerm)}&dateFrom=${dateFrom}&dateTo=${dateTo}&departure=${encodeURIComponent(departure)}&arrival=${encodeURIComponent(arrival)}&pageNum=${page}&pageSize=${size}`);
 export const updateFlightDelay = (flightId, delayData) => 
   api.put(`/flight/${flightId}/delay`, delayData);
 export const getFlightDelayHistory = (flightId) => 
   api.get(`/flight/${flightId}/delay-history`);
-
+export const getFlightByConditions = (flightName, dateFrom, dateTo, departure, arrival, page = 0, size = 10 ) => 
+  api.get(`/flight/conditions?flightName=${flightName}&dateFrom=${dateFrom}&dateTo=${dateTo}&departure=${departure}&arrival=${arrival}&pageNum=${page}&pageSize=${size}`);
 // Transactions APIs
 export const getTransactions = (page = 0, size = 10) => 
   api.get(`/transaction/all?pageNum=${page}&pageSize=${size}`);

@@ -6,12 +6,18 @@ import org.example.service.FlightService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.sql.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/flight")
 public class FlightController {
@@ -19,22 +25,41 @@ public class FlightController {
     FlightService flightService;
 
     @GetMapping(value = "/conditions")
-    public ResponseEntity<?> getByConditions(@RequestParam String flightName
-            , @RequestParam Date dateFrom, @RequestParam Date dateTo, @RequestParam String departure
-            , @RequestParam String arrival, @RequestParam Integer pageNum, @RequestParam Integer pageSize) {
+    public ResponseEntity<?> getByConditions(
+            @RequestParam String flightName,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate dateFrom,
+            @RequestParam @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate dateTo,
+            @RequestParam String departure,
+            @RequestParam String arrival,
+            @RequestParam Integer pageNum,
+            @RequestParam Integer pageSize) {
         try {
             Pageable pageable = PageRequest.of(pageNum, pageSize);
-            List<Flight> flightList = flightService
-                    .findByConditions(flightName, dateFrom, dateTo, departure, arrival, pageable);
+            
+            // Convert LocalDate to LocalDateTime for start and end of day
+            LocalDateTime dateTimeFrom = dateFrom.atStartOfDay();
+            LocalDateTime dateTimeTo = dateTo.atTime(LocalTime.MAX);
+            
+            List<Flight> flightList = flightService.searchFlights(
+                flightName, dateTimeFrom, dateTimeTo, departure, arrival, pageable);
+            
             if (ObjectUtils.isEmpty(flightList)) {
-                return ResponseEntity.badRequest()
-                        .body("Not found");
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", "NOT_FOUND");
+                response.put("message", "Không tìm thấy chuyến bay phù hợp");
+                return ResponseEntity.ok().body(response);
             } else {
-                return ResponseEntity.ok().body(flightList);
+                Map<String, Object> response = new HashMap<>();
+                response.put("status", "SUCCESS");
+                response.put("data", flightList);
+                response.put("total", flightList.size());
+                return ResponseEntity.ok().body(response);
             }
         } catch (Exception e) {
-            return ResponseEntity.internalServerError()
-                    .body("Server Error");
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "ERROR");
+            response.put("message", "Lỗi server: " + e.getMessage());
+            return ResponseEntity.internalServerError().body(response);
         }
     }
 

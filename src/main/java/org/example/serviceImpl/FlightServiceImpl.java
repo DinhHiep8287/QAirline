@@ -8,7 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.sql.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -17,9 +17,14 @@ public class FlightServiceImpl implements FlightService {
     FlightRepository flightRepository;
 
     @Override
-    public List<Flight> findByConditions(String flightName, Date dateFrom, Date dateTo, String departure, String arrival, Pageable pageable) {
+    public List<Flight> findByConditions(String flightName, LocalDateTime dateFrom, LocalDateTime dateTo, String departure, String arrival, Pageable pageable) {
         return flightRepository.findByIsDeletedFalseAndNameContainsAndStartTimeBetweenAndDepartureContainsAndArrivalContains
                 (flightName, dateFrom, dateTo, departure, arrival, pageable);
+    }
+
+    @Override
+    public List<Flight> searchFlights(String searchTerm, LocalDateTime dateFrom, LocalDateTime dateTo, String departure, String arrival, Pageable pageable) {
+        return flightRepository.searchFlights(searchTerm, dateFrom, dateTo, departure, arrival, pageable);
     }
 
     @Override
