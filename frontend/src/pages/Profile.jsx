@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
-import { FaUser, FaEnvelope, FaPhone, FaMapMarkerAlt, FaCalendarAlt, FaKey } from 'react-icons/fa';
+import { FaUser, FaEnvelope, FaIdCard, FaKey } from 'react-icons/fa';
 import { toast } from 'react-toastify';
+import { useAuth } from '../contexts/AuthContext';
+import { getUserByEmail, updateUser, changePassword } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 const ProfileSection = ({ title, children }) => (
   <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -20,7 +23,7 @@ const InputField = ({ icon: Icon, label, type = "text", value, onChange, disable
       </div>
       <input
         type={type}
-        value={value}
+        value={value || ''}
         onChange={onChange}
         disabled={disabled}
         className={`block w-full pl-10 pr-3 py-2 sm:text-sm rounded-lg
@@ -38,31 +41,43 @@ const InputField = ({ icon: Icon, label, type = "text", value, onChange, disable
 );
 
 const Profile = () => {
+  const { user, setUser } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
-    fullName: '',
+    name: '',
     email: '',
-    phone: '',
-    address: '',
-    birthday: '',
+    idNumber: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // TODO: Fetch user data from API
-    const mockUserData = {
-      fullName: 'Nguyễn Văn A',
-      email: 'nguyenvana@example.com',
-      phone: '0123456789',
-      address: 'Hà Nội, Việt Nam',
-      birthday: '1990-01-01'
+    const fetchUserData = async () => {
+      try {
+        if (user?.email) {
+          const response = await getUserByEmail(user.email);
+          const userData = response.data;
+          setFormData({
+            name: userData.name || '',
+            email: userData.email || '',
+            idNumber: userData.idNumber || '',
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        toast.error('Không thể tải thông tin người dùng');
+      }
     };
-    setFormData(prev => ({ ...prev, ...mockUserData }));
-  }, []);
+
+    fetchUserData();
+  }, [user]);
 
   const handleInputChange = (field) => (e) => {
     setFormData(prev => ({ ...prev, [field]: e.target.value }));
@@ -75,14 +90,8 @@ const Profile = () => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = 'Vui lòng nhập họ tên';
-    }
-    
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'Vui lòng nhập số điện thoại';
-    } else if (!/^[0-9]{10}$/.test(formData.phone)) {
-      newErrors.phone = 'Số điện thoại không hợp lệ';
+    if (!formData.name.trim()) {
+      newErrors.name = 'Vui lòng nhập họ tên';
     }
 
     if (isChangingPassword) {
@@ -113,19 +122,68 @@ const Profile = () => {
     }
 
     try {
-      // TODO: Call API to update user profile
-      toast.success('Cập nhật thông tin thành công!');
-      setIsEditing(false);
-      setIsChangingPassword(false);
-      // Reset password fields
-      setFormData(prev => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      }));
+      if (isChangingPassword) {
+        // Handle password change
+        try {
+          await changePassword({
+            email: user.email,
+            oldPassword: formData.currentPassword,
+            newPassword: formData.newPassword
+          });
+          toast.success('Đổi mật khẩu thành công!');
+          setIsChangingPassword(false);
+          setFormData(prev => ({
+            ...prev,
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          }));
+        } catch (error) {
+          console.error('Password change error:', error);
+          let errorMessage = 'Có lỗi xảy ra khi đổi mật khẩu';
+          
+          if (error.response?.status === 400) {
+            errorMessage = 'Mật khẩu hiện tại không đúng';
+          } else if (error.response?.status === 401 || error.response?.status === 403) {
+            errorMessage = 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại';
+            localStorage.removeItem('token');
+            navigate('/login');
+          } else if (error.response?.data) {
+            errorMessage = error.response.data;
+          }
+          
+          toast.error(errorMessage);
+          return;
+        }
+      } else {
+        // Handle profile update
+        const updateData = {
+          id: user.id,
+          email: user.email,
+          name: formData.name,
+          idNumber: user.idNumber,
+          role: user.role,
+          createBy: user.createBy,
+          createDate: user.createDate,
+          updateBy: user.email,
+          updateDate: new Date().toISOString(),
+          forgotten: user.forgotten || false,
+          deleted: user.deleted || false
+        };
+        
+        const response = await updateUser(updateData);
+        if (response.data === "Edited") {
+          // Fetch updated user data
+          const updatedUserResponse = await getUserByEmail(user.email);
+          setUser(updatedUserResponse.data);
+          toast.success('Cập nhật thông tin thành công!');
+          setIsEditing(false);
+        }
+      }
     } catch (error) {
-      toast.error('Có lỗi xảy ra. Vui lòng thử lại!');
+      console.error('Error updating profile:', error);
+      const errorMessage = error.response?.data || 'Có lỗi xảy ra. Vui lòng thử lại!';
+      toast.error(errorMessage);
     }
   };
 
@@ -136,16 +194,34 @@ const Profile = () => {
           {/* Profile Header */}
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-gray-900">Thông tin cá nhân</h1>
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200
-                ${isEditing
-                  ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                  : 'bg-[#605DEC] text-white hover:bg-[#4B48BF]'
-                }`}
-            >
-              {isEditing ? 'Hủy' : 'Chỉnh sửa'}
-            </button>
+            <div className="space-x-4">
+              <button
+                onClick={() => {
+                  setIsEditing(!isEditing);
+                  setIsChangingPassword(false);
+                }}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200
+                  ${isEditing
+                    ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                    : 'bg-[#605DEC] text-white hover:bg-[#4B48BF]'
+                  }`}
+              >
+                {isEditing ? 'Hủy' : 'Chỉnh sửa'}
+              </button>
+              <button
+                onClick={() => {
+                  setIsChangingPassword(!isChangingPassword);
+                  setIsEditing(false);
+                }}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors duration-200
+                  ${isChangingPassword
+                    ? 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                    : 'bg-[#605DEC] text-white hover:bg-[#4B48BF]'
+                  }`}
+              >
+                {isChangingPassword ? 'Hủy' : 'Đổi mật khẩu'}
+              </button>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -155,10 +231,10 @@ const Profile = () => {
                 <InputField
                   icon={FaUser}
                   label="Họ và tên"
-                  value={formData.fullName}
-                  onChange={handleInputChange('fullName')}
+                  value={formData.name}
+                  onChange={handleInputChange('name')}
                   disabled={!isEditing}
-                  error={errors.fullName}
+                  error={errors.name}
                 />
                 <InputField
                   icon={FaEnvelope}
@@ -168,94 +244,54 @@ const Profile = () => {
                   disabled={true}
                 />
                 <InputField
-                  icon={FaPhone}
-                  label="Số điện thoại"
-                  value={formData.phone}
-                  onChange={handleInputChange('phone')}
-                  disabled={!isEditing}
-                  error={errors.phone}
+                  icon={FaIdCard}
+                  label="Mã định danh"
+                  value={formData.idNumber}
+                  disabled={true}
                 />
-                <InputField
-                  icon={FaCalendarAlt}
-                  label="Ngày sinh"
-                  type="date"
-                  value={formData.birthday}
-                  onChange={handleInputChange('birthday')}
-                  disabled={!isEditing}
-                />
-                <div className="md:col-span-2">
-                  <InputField
-                    icon={FaMapMarkerAlt}
-                    label="Địa chỉ"
-                    value={formData.address}
-                    onChange={handleInputChange('address')}
-                    disabled={!isEditing}
-                  />
-                </div>
               </div>
             </ProfileSection>
 
             {/* Password Change Section */}
-            <ProfileSection title="Đổi mật khẩu">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-500">
-                    {isChangingPassword
-                      ? 'Nhập mật khẩu hiện tại và mật khẩu mới của bạn'
-                      : 'Bạn có thể đổi mật khẩu của mình tại đây'}
-                  </p>
-                  {isEditing && (
-                    <button
-                      type="button"
-                      onClick={() => setIsChangingPassword(!isChangingPassword)}
-                      className="text-sm font-medium text-[#605DEC] hover:text-[#4B48BF] transition-colors duration-200"
-                    >
-                      {isChangingPassword ? 'Hủy' : 'Đổi mật khẩu'}
-                    </button>
-                  )}
+            {isChangingPassword && (
+              <ProfileSection title="Đổi mật khẩu">
+                <div className="space-y-6">
+                  <InputField
+                    icon={FaKey}
+                    label="Mật khẩu hiện tại"
+                    type="password"
+                    value={formData.currentPassword}
+                    onChange={handleInputChange('currentPassword')}
+                    error={errors.currentPassword}
+                  />
+                  <InputField
+                    icon={FaKey}
+                    label="Mật khẩu mới"
+                    type="password"
+                    value={formData.newPassword}
+                    onChange={handleInputChange('newPassword')}
+                    error={errors.newPassword}
+                  />
+                  <InputField
+                    icon={FaKey}
+                    label="Xác nhận mật khẩu mới"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange('confirmPassword')}
+                    error={errors.confirmPassword}
+                  />
                 </div>
-
-                {isChangingPassword && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2">
-                      <InputField
-                        icon={FaKey}
-                        label="Mật khẩu hiện tại"
-                        type="password"
-                        value={formData.currentPassword}
-                        onChange={handleInputChange('currentPassword')}
-                        error={errors.currentPassword}
-                      />
-                    </div>
-                    <InputField
-                      icon={FaKey}
-                      label="Mật khẩu mới"
-                      type="password"
-                      value={formData.newPassword}
-                      onChange={handleInputChange('newPassword')}
-                      error={errors.newPassword}
-                    />
-                    <InputField
-                      icon={FaKey}
-                      label="Xác nhận mật khẩu mới"
-                      type="password"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange('confirmPassword')}
-                      error={errors.confirmPassword}
-                    />
-                  </div>
-                )}
-              </div>
-            </ProfileSection>
+              </ProfileSection>
+            )}
 
             {/* Submit Button */}
-            {isEditing && (
+            {(isEditing || isChangingPassword) && (
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-[#605DEC] text-white rounded-lg hover:bg-[#4B48BF] transition-colors duration-200 font-medium"
+                  className="px-6 py-2 bg-[#605DEC] text-white rounded-lg hover:bg-[#4B48BF] transition-colors duration-200"
                 >
-                  Lưu thay đổi
+                  {isChangingPassword ? 'Đổi mật khẩu' : 'Lưu thay đổi'}
                 </button>
               </div>
             )}

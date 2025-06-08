@@ -1,24 +1,48 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8080/api/v1'
+  baseURL: 'http://localhost:8080/api/v1',
+  headers: {
+    'Content-Type': 'application/json',
+  },
 });
 
-// Add token to request header
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+// Add a request interceptor to include the token in requests
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
   }
-  return config;
-});
+);
+
+// Add a response interceptor to handle common errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      // Clear local storage and redirect to login if token is invalid/expired
+      localStorage.clear();
+      window.location.href = '/';
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Auth APIs
 export const login = (credentials) => api.post('/auth/login', credentials);
 export const register = (userData) => api.post('/auth/register', userData);
-export const forgotPassword = (email) => api.post('/auth/forgot-password', { email });
-export const resetPassword = (token, newPassword) => 
-  api.post('/auth/reset-password', { token, newPassword });
+export const forgotPassword = (email) => api.post('/auth/forgetP', { email });
+export const changePassword = (changePasswordData) => api.put('/auth/changeP', changePasswordData);
+
+// User APIs
+export const getUserByEmail = (email) => api.get(`/users/email/${email}`);
+export const updateUser = (userId, userData) => api.put(`/users/${userId}`, userData);
 
 // News APIs
 export const getNews = (page = 0, size = 10) => 
