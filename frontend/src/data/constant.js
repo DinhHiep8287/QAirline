@@ -11,4 +11,6 @@ export const suggestions = [
   { code: 'VCS', name: 'Côn Đảo', fullName: 'Sân bay Côn Đảo' },
   { code: 'UIH', name: 'Quy Nhơn', fullName: 'Sân bay Phù Cát' },
   { code: 'VDO', name: 'Vân Đồn', fullName: 'Sân bay Quốc tế Vân Đồn' },
+  { code: 'NRT', name: 'Tokyo', fullName: 'Sân bay Quốc tế Narita (Tokyo)' },
+  { code: 'SIN', name: 'Singapore', fullName: 'Sân bay Quốc tế Changi (Singapore)' },
 ];
