@@ -9,16 +9,19 @@ import { FaUser, FaEnvelope, FaPhone, FaCalendar, FaVenusMars, FaMapMarkerAlt } 
 import { MdOutlineClose } from "react-icons/md";
 import { useAuth } from "../contexts/AuthContext";
 
-const PassengerModal = ({ isOpen, onClose, flightInfo, selectedClass, onSubmit }) => {
+const PassengerModal = ({ isOpen, onClose, flightInfo, selectedClass, onSubmit, searchData }) => {
   const { user } = useAuth();
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phoneNum: "",
-    birthday: "",
-    gender: "",
-    address: "",
-  });
+  const totalPassengers = searchData.adult + searchData.minor;
+  const [passengers, setPassengers] = useState(
+    Array(totalPassengers).fill().map(() => ({
+      name: "",
+      email: "",
+      phoneNum: "",
+      birthday: "",
+      gender: "",
+      address: "",
+    }))
+  );
 
   // Add gender conversion function
   const convertGenderValue = (gender) => {
@@ -48,16 +51,19 @@ const PassengerModal = ({ isOpen, onClose, flightInfo, selectedClass, onSubmit }
         if (user?.email) {
           const response = await getUserByEmail(user.email);
           const userData = response.data;
-          console.log('User data from server:', userData);
-          console.log('Gender value:', userData.gender);
-          console.log('Converted gender value:', convertGenderValue(userData.gender));
-          setFormData({
-            name: userData.name || "",
-            email: userData.email || "",
-            phoneNum: userData.phoneNum || "",
-            birthday: userData.birthday ? new Date(userData.birthday).toISOString().split('T')[0] : "",
-            gender: convertGenderValue(userData.gender),
-            address: userData.address || "",
+          
+          // Cập nhật thông tin cho hành khách đầu tiên
+          setPassengers(prevPassengers => {
+            const newPassengers = [...prevPassengers];
+            newPassengers[0] = {
+              name: userData.name || "",
+              email: userData.email || "",
+              phoneNum: userData.phoneNum || "",
+              birthday: userData.birthday ? new Date(userData.birthday).toISOString().split('T')[0] : "",
+              gender: convertGenderValue(userData.gender),
+              address: userData.address || "",
+            };
+            return newPassengers;
           });
         }
       } catch (error) {
@@ -66,33 +72,45 @@ const PassengerModal = ({ isOpen, onClose, flightInfo, selectedClass, onSubmit }
       }
     };
 
-    if (isOpen && user) {
+    if (isOpen) {
       fetchUserData();
     }
   }, [isOpen, user]);
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
+  const handleChange = (index, e) => {
+    const newPassengers = [...passengers];
+    newPassengers[index] = {
+      ...newPassengers[index],
       [e.target.name]: e.target.value
-    });
+    };
+    setPassengers(newPassengers);
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Validate form
-    if (!formData.name || !formData.email || !formData.phoneNum || !formData.birthday || !formData.gender || !formData.address) {
-      toast.warning("Vui lòng điền đầy đủ thông tin.");
+    // Validate all forms
+    const isValid = passengers.every(passenger => 
+      passenger.name && 
+      passenger.email && 
+      passenger.phoneNum && 
+      passenger.birthday && 
+      passenger.gender && 
+      passenger.address
+    );
+
+    if (!isValid) {
+      toast.warning("Vui lòng điền đầy đủ thông tin cho tất cả hành khách.");
       return;
     }
-    onSubmit(formData);
+
+    onSubmit(passengers);
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white w-[90%] max-w-[600px] rounded-xl p-6 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white w-[90%] max-w-[800px] rounded-xl p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-[#1A1D1F]">Thông tin hành khách</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
@@ -124,92 +142,101 @@ const PassengerModal = ({ isOpen, onClose, flightInfo, selectedClass, onSubmit }
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaUser className="text-gray-400" />
-            </div>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              placeholder="Họ và tên"
-              className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {passengers.map((passenger, index) => (
+            <div key={index} className="border-t pt-6">
+              <h3 className="text-lg font-medium text-[#1A1D1F] mb-4">
+                Hành khách {index + 1}
+              </h3>
+              <div className="space-y-4">
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaUser className="text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    name="name"
+                    value={passenger.name}
+                    onChange={(e) => handleChange(index, e)}
+                    placeholder="Họ và tên"
+                    className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
+                  />
+                </div>
 
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaEnvelope className="text-gray-400" />
-            </div>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Email"
-              className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
-            />
-          </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaEnvelope className="text-gray-400" />
+                  </div>
+                  <input
+                    type="email"
+                    name="email"
+                    value={passenger.email}
+                    onChange={(e) => handleChange(index, e)}
+                    placeholder="Email"
+                    className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
+                  />
+                </div>
 
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaPhone className="text-gray-400" />
-            </div>
-            <input
-              type="tel"
-              name="phoneNum"
-              value={formData.phoneNum}
-              onChange={handleChange}
-              placeholder="Số điện thoại"
-              className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
-            />
-          </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaPhone className="text-gray-400" />
+                  </div>
+                  <input
+                    type="tel"
+                    name="phoneNum"
+                    value={passenger.phoneNum}
+                    onChange={(e) => handleChange(index, e)}
+                    placeholder="Số điện thoại"
+                    className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
+                  />
+                </div>
 
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaCalendar className="text-gray-400" />
-            </div>
-            <input
-              type="date"
-              name="birthday"
-              value={formData.birthday}
-              onChange={handleChange}
-              className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
-            />
-          </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaCalendar className="text-gray-400" />
+                  </div>
+                  <input
+                    type="date"
+                    name="birthday"
+                    value={passenger.birthday}
+                    onChange={(e) => handleChange(index, e)}
+                    className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
+                  />
+                </div>
 
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaVenusMars className="text-gray-400" />
-            </div>
-            <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleChange}
-              className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
-            >
-              <option value="">Chọn giới tính</option>
-              <option value="MALE">Nam</option>
-              <option value="FEMALE">Nữ</option>
-              <option value="OTHER">Khác</option>
-            </select>
-          </div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaVenusMars className="text-gray-400" />
+                  </div>
+                  <select
+                    name="gender"
+                    value={passenger.gender}
+                    onChange={(e) => handleChange(index, e)}
+                    className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
+                  >
+                    <option value="">Chọn giới tính</option>
+                    <option value="MALE">Nam</option>
+                    <option value="FEMALE">Nữ</option>
+                    <option value="OTHER">Khác</option>
+                  </select>
+                </div>
 
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaMapMarkerAlt className="text-gray-400" />
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <FaMapMarkerAlt className="text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    name="address"
+                    value={passenger.address}
+                    onChange={(e) => handleChange(index, e)}
+                    placeholder="Địa chỉ"
+                    className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
+                  />
+                </div>
+              </div>
             </div>
-            <input
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              placeholder="Địa chỉ"
-              className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
-            />
-          </div>
+          ))}
 
           <button
             type="submit"
@@ -233,6 +260,7 @@ const FlightChoose = ({ searchData }) => {
   const [showPassengerModal, setShowPassengerModal] = useState(false);
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedSeats, setSelectedSeats] = useState([]);
 
   const calculateAvailableSeats = async (flightId) => {
     try {
@@ -325,14 +353,34 @@ const FlightChoose = ({ searchData }) => {
         );
 
         if (response.data.status === "SUCCESS") {
-          setFlights(response.data.data);
           // Tính số ghế trống cho tất cả chuyến bay
           const seatsInfo = {};
+          const totalPassengers = searchData.adult + searchData.minor;
+          
+          // Lọc các chuyến bay có đủ ghế
+          const availableFlights = [];
           for (const flight of response.data.data) {
             const seats = await calculateAvailableSeats(flight.id);
             seatsInfo[flight.id] = seats;
+            
+            // Kiểm tra nếu ít nhất một hạng ghế có đủ chỗ
+            const hasEnoughSeats = seats.economySeatsAvailable >= totalPassengers ||
+                                 seats.businessSeatsAvailable >= totalPassengers ||
+                                 seats.firstSeatsAvailable >= totalPassengers;
+                                     
+            // Chỉ thêm chuyến bay nếu có ít nhất một hạng ghế đủ chỗ
+            if (hasEnoughSeats) {
+              availableFlights.push(flight);
+            }
           }
+          
+          setFlights(availableFlights);
           setSeatPrice(seatsInfo);
+          
+          if (availableFlights.length === 0) {
+            setError("Không tìm thấy chuyến bay nào có đủ ghế cho số lượng hành khách");
+            toast.error("Không tìm thấy chuyến bay nào có đủ ghế cho số lượng hành khách");
+          }
         } else {
           setError(response.data.message || "Không thể tìm thấy chuyến bay phù hợp");
           toast.error(response.data.message || "Không thể tìm thấy chuyến bay phù hợp");
@@ -375,18 +423,41 @@ const FlightChoose = ({ searchData }) => {
     }
   };
 
-  const handleClassSelection = (flight, seatClass) => {
-    setSelectedFlight(flight);
-    setSelectedClass(seatClass);
-    setShowPassengerModal(true);
+  const handleClassSelection = async (flight, seatClass) => {
+    try {
+      // Lấy tất cả transactions của chuyến bay
+      const transactionsResponse = await getTransactionsByFlight(flight.id);
+      
+      if (!transactionsResponse.data) {
+        toast.error("Không thể lấy thông tin ghế");
+        return;
+      }
+
+      // Lọc các ghế FREE theo hạng ghế
+      const freeSeats = transactionsResponse.data.filter(
+        transaction => transaction.status === 'FREE' && 
+                      transaction.seat?.type === seatClass
+      );
+
+      // Lấy đủ số ghế cần thiết
+      const seats = freeSeats.slice(0, searchData.adult + searchData.minor);
+      setSelectedSeats(seats);
+      setSelectedFlight(flight);
+      setSelectedClass(seatClass);
+      setShowPassengerModal(true);
+    } catch (error) {
+      console.error("Error selecting seats:", error);
+      toast.error("Không thể chọn ghế");
+    }
   };
 
-  const handlePassengerSubmit = (passengerData) => {
+  const handlePassengerSubmit = (passengers) => {
     // Combine flight and passenger data
     const bookingData = {
       flight: selectedFlight,
-      passenger: passengerData,
+      passengers: passengers,
       seatClass: selectedClass,
+      selectedSeats: selectedSeats,
       price: seatPrice[selectedFlight.id][`${selectedClass.toLowerCase()}Price`]
     };
 
@@ -416,6 +487,7 @@ const FlightChoose = ({ searchData }) => {
       businessPrice: 0,
       firstPrice: 0
     };
+    const totalPassengers = searchData.adult + searchData.minor;
 
     return (
       <div key={flight.id} className="bg-white rounded-xl shadow-lg border border-gray-100 hover:border-[#605DEC] transition-all duration-300 overflow-hidden">
@@ -477,9 +549,9 @@ const FlightChoose = ({ searchData }) => {
               {/* Economy Class */}
               <button 
                 onClick={() => handleClassSelection(flight, 'ECONOMY')}
-                disabled={flightSeats.economySeatsAvailable === 0 || flight.status !== 'OPEN'}
+                disabled={flightSeats.economySeatsAvailable < totalPassengers || flight.status !== 'OPEN'}
                 className={`relative bg-green-50 rounded-lg p-4 text-left transition-all
-                  ${flightSeats.economySeatsAvailable > 0 && flight.status === 'OPEN' 
+                  ${flightSeats.economySeatsAvailable >= totalPassengers && flight.status === 'OPEN' 
                     ? 'hover:bg-green-100 cursor-pointer' 
                     : 'opacity-50 cursor-not-allowed'}`}
               >
@@ -495,9 +567,9 @@ const FlightChoose = ({ searchData }) => {
               {/* Business Class */}
               <button 
                 onClick={() => handleClassSelection(flight, 'BUSINESS')}
-                disabled={flightSeats.businessSeatsAvailable === 0 || flight.status !== 'OPEN'}
+                disabled={flightSeats.businessSeatsAvailable < totalPassengers || flight.status !== 'OPEN'}
                 className={`relative bg-blue-50 rounded-lg p-4 text-left transition-all
-                  ${flightSeats.businessSeatsAvailable > 0 && flight.status === 'OPEN'
+                  ${flightSeats.businessSeatsAvailable >= totalPassengers && flight.status === 'OPEN'
                     ? 'hover:bg-blue-100 cursor-pointer' 
                     : 'opacity-50 cursor-not-allowed'}`}
               >
@@ -513,9 +585,9 @@ const FlightChoose = ({ searchData }) => {
               {/* First Class */}
               <button 
                 onClick={() => handleClassSelection(flight, 'FIRST')}
-                disabled={flightSeats.firstSeatsAvailable === 0 || flight.status !== 'OPEN'}
+                disabled={flightSeats.firstSeatsAvailable < totalPassengers || flight.status !== 'OPEN'}
                 className={`relative bg-purple-50 rounded-lg p-4 text-left transition-all
-                  ${flightSeats.firstSeatsAvailable > 0 && flight.status === 'OPEN'
+                  ${flightSeats.firstSeatsAvailable >= totalPassengers && flight.status === 'OPEN'
                     ? 'hover:bg-purple-100 cursor-pointer' 
                     : 'opacity-50 cursor-not-allowed'}`}
               >
@@ -620,6 +692,7 @@ const FlightChoose = ({ searchData }) => {
           flightInfo={selectedFlight}
           selectedClass={selectedClass}
           onSubmit={handlePassengerSubmit}
+          searchData={searchData}
         />
       )}
     </div>
