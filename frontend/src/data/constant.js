@@ -13,4 +13,5 @@ export const suggestions = [
   { code: 'VDO', name: 'Vân Đồn', fullName: 'Sân bay Quốc tế Vân Đồn' },
   { code: 'NRT', name: 'Tokyo', fullName: 'Sân bay Quốc tế Narita (Tokyo)' },
   { code: 'SIN', name: 'Singapore', fullName: 'Sân bay Quốc tế Changi (Singapore)' },
+  { code: 'SEL', name: 'Seoul', fullName: 'Sân bay Quốc tế Incheon (Seoul)' },
 ];

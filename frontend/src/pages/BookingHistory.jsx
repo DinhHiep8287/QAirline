@@ -7,6 +7,8 @@ import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
 const BookingCard = ({ booking }) => {
+  const navigate = useNavigate();
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'BOOKED':
@@ -101,7 +103,10 @@ const BookingCard = ({ booking }) => {
               </p>
               <p className="text-lg font-semibold text-gray-900 mt-1">{formatPrice(booking.price)}</p>
             </div>
-            <button className="px-4 py-2 bg-[#F6F6FE] text-[#605DEC] rounded-lg hover:bg-[#605DEC] hover:text-white transition-colors duration-200 text-sm font-medium">
+            <button
+              onClick={() => navigate(`/booking/${booking.id}`)}
+              className="px-4 py-2 bg-[#F6F6FE] text-[#605DEC] rounded-lg hover:bg-[#605DEC] hover:text-white transition-colors duration-200 text-sm font-medium"
+            >
               Xem chi tiết
             </button>
           </div>
