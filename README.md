@@ -70,7 +70,7 @@ QAirline là hệ thống quản lý hàng không được xây dựng bằng Sp
 
 3. Khởi chạy ứng dụng frontend:
    ```bash
-   npm start
+   npm run dev
    # hoặc
    yarn start
    ```
