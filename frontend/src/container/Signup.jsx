@@ -148,9 +148,9 @@ const Signup = ({ signup: isSignupOpen, setSignup, setSignin }) => {
                             disabled={isSubmitting}
                         >
                             <option value="">Chọn giới tính</option>
-                            <option value="male">Nam</option>
-                            <option value="female">Nữ</option>
-                            <option value="other">Khác</option>
+                            <option value="MALE">Nam</option>
+                            <option value="FEMALE">Nữ</option>
+                            <option value="OTHER">Khác</option>
                         </select>
                         <FaVenusMars className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                     </div>

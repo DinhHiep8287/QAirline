@@ -26,6 +26,7 @@ import AllNews from './pages/AllNews';
 import PlaceDetail from './pages/PlaceDetail';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import FlightConfirm from './pages/FlightConfirm';
 
 const ClientLayout = () => {
     return (
@@ -71,6 +72,8 @@ const App = () => {
                         <Route path="all-news" element={<AllNews />} />
                         <Route path="news-detail" element={<NewsDetail />} />
                         <Route path="place-detail" element={<PlaceDetail />} />
+                        <Route path="flight/:id/confirm" element={<FlightConfirm />} />
+                        <Route path="flight/:id/seat-selection" element={<SeatSelect />} />
                     </Route>
                 </Routes>
                 <ToastContainer

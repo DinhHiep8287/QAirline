@@ -1,17 +1,238 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { searchFlights, getTransactionsByFlight } from "../services/api";
+import { Link, useNavigate } from "react-router-dom";
+import { searchFlights, getTransactionsByFlight, getUserByEmail } from "../services/api";
 import { format, parseISO, differenceInMinutes } from "date-fns";
 import { toast } from "react-toastify";
 import { vi } from "date-fns/locale";
 import { formatCurrency } from "../utils/format";
+import { FaUser, FaEnvelope, FaPhone, FaCalendar, FaVenusMars, FaMapMarkerAlt } from "react-icons/fa";
+import { MdOutlineClose } from "react-icons/md";
+import { useAuth } from "../contexts/AuthContext";
+
+const PassengerModal = ({ isOpen, onClose, flightInfo, selectedClass, onSubmit }) => {
+  const { user } = useAuth();
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phoneNum: "",
+    birthday: "",
+    gender: "",
+    address: "",
+  });
+
+  // Add gender conversion function
+  const convertGenderValue = (gender) => {
+    if (!gender) return "";
+    const upperGender = gender.toUpperCase();
+    switch (upperGender) {
+      case "MALE":
+      case "NAM":
+      case "M":
+        return "MALE";
+      case "FEMALE":
+      case "NỮ":
+      case "F":
+        return "FEMALE";
+      case "OTHER":
+      case "KHÁC":
+      case "O":
+        return "OTHER";
+      default:
+        return upperGender;
+    }
+  };
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        if (user?.email) {
+          const response = await getUserByEmail(user.email);
+          const userData = response.data;
+          console.log('User data from server:', userData);
+          console.log('Gender value:', userData.gender);
+          console.log('Converted gender value:', convertGenderValue(userData.gender));
+          setFormData({
+            name: userData.name || "",
+            email: userData.email || "",
+            phoneNum: userData.phoneNum || "",
+            birthday: userData.birthday ? new Date(userData.birthday).toISOString().split('T')[0] : "",
+            gender: convertGenderValue(userData.gender),
+            address: userData.address || "",
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        toast.error('Không thể tải thông tin người dùng');
+      }
+    };
+
+    if (isOpen && user) {
+      fetchUserData();
+    }
+  }, [isOpen, user]);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Validate form
+    if (!formData.name || !formData.email || !formData.phoneNum || !formData.birthday || !formData.gender || !formData.address) {
+      toast.warning("Vui lòng điền đầy đủ thông tin.");
+      return;
+    }
+    onSubmit(formData);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white w-[90%] max-w-[600px] rounded-xl p-6 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-[#1A1D1F]">Thông tin hành khách</h2>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <MdOutlineClose size={24} />
+          </button>
+        </div>
+
+        <div className="mb-6">
+          <h3 className="text-lg font-medium text-[#1A1D1F] mb-2">Chi tiết chuyến bay</h3>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-500">Chuyến bay</p>
+                <p className="font-medium">{flightInfo.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Hạng vé</p>
+                <p className="font-medium">{selectedClass}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Điểm khởi hành</p>
+                <p className="font-medium">{flightInfo.departure}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Điểm đến</p>
+                <p className="font-medium">{flightInfo.arrival}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaUser className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              placeholder="Họ và tên"
+              className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
+            />
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaEnvelope className="text-gray-400" />
+            </div>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Email"
+              className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
+            />
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaPhone className="text-gray-400" />
+            </div>
+            <input
+              type="tel"
+              name="phoneNum"
+              value={formData.phoneNum}
+              onChange={handleChange}
+              placeholder="Số điện thoại"
+              className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
+            />
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaCalendar className="text-gray-400" />
+            </div>
+            <input
+              type="date"
+              name="birthday"
+              value={formData.birthday}
+              onChange={handleChange}
+              className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
+            />
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaVenusMars className="text-gray-400" />
+            </div>
+            <select
+              name="gender"
+              value={formData.gender}
+              onChange={handleChange}
+              className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
+            >
+              <option value="">Chọn giới tính</option>
+              <option value="MALE">Nam</option>
+              <option value="FEMALE">Nữ</option>
+              <option value="OTHER">Khác</option>
+            </select>
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaMapMarkerAlt className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              placeholder="Địa chỉ"
+              className="pl-10 w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-3 bg-[#605DEC] text-white rounded-lg hover:bg-[#4B48BF] transition-colors"
+          >
+            Tiếp tục
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 const FlightChoose = ({ searchData }) => {
+  const navigate = useNavigate();
   const [flights, setFlights] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [sortBy, setSortBy] = useState("time_asc");
   const [seatPrice, setSeatPrice] = useState({});
+  const [showPassengerModal, setShowPassengerModal] = useState(false);
+  const [selectedFlight, setSelectedFlight] = useState(null);
+  const [selectedClass, setSelectedClass] = useState(null);
 
   const calculateAvailableSeats = async (flightId) => {
     try {
@@ -154,6 +375,29 @@ const FlightChoose = ({ searchData }) => {
     }
   };
 
+  const handleClassSelection = (flight, seatClass) => {
+    setSelectedFlight(flight);
+    setSelectedClass(seatClass);
+    setShowPassengerModal(true);
+  };
+
+  const handlePassengerSubmit = (passengerData) => {
+    // Combine flight and passenger data
+    const bookingData = {
+      flight: selectedFlight,
+      passenger: passengerData,
+      seatClass: selectedClass,
+      price: seatPrice[selectedFlight.id][`${selectedClass.toLowerCase()}Price`]
+    };
+
+    // Store booking data in localStorage for next steps
+    localStorage.setItem('currentBooking', JSON.stringify(bookingData));
+    
+    // Close modal and navigate to next step
+    setShowPassengerModal(false);
+    navigate(`/flight/${selectedFlight.id}/confirm`);
+  };
+
   const renderFlightInfo = (flight) => {
     const startDate = parseISO(flight.startTime);
     const endDate = parseISO(flight.endTime);
@@ -231,7 +475,14 @@ const FlightChoose = ({ searchData }) => {
           <div className="mt-6 pt-6 border-t border-gray-100">
             <div className="grid grid-cols-3 gap-4 mb-4">
               {/* Economy Class */}
-              <div className="relative bg-green-50 rounded-lg p-4">
+              <button 
+                onClick={() => handleClassSelection(flight, 'ECONOMY')}
+                disabled={flightSeats.economySeatsAvailable === 0 || flight.status !== 'OPEN'}
+                className={`relative bg-green-50 rounded-lg p-4 text-left transition-all
+                  ${flightSeats.economySeatsAvailable > 0 && flight.status === 'OPEN' 
+                    ? 'hover:bg-green-100 cursor-pointer' 
+                    : 'opacity-50 cursor-not-allowed'}`}
+              >
                 <div className="absolute top-2 right-2 bg-green-700 text-white text-xs px-2 py-1 rounded">
                   {flightSeats.economySeatsAvailable} chỗ còn lại
                 </div>
@@ -239,10 +490,17 @@ const FlightChoose = ({ searchData }) => {
                 <p className="text-xl font-bold text-[#1A1D1F]">
                   {formatCurrency(flightSeats.economyPrice)} <span className="text-sm text-gray-500">VND</span>
                 </p>
-              </div>
+              </button>
 
               {/* Business Class */}
-              <div className="relative bg-blue-50 rounded-lg p-4">
+              <button 
+                onClick={() => handleClassSelection(flight, 'BUSINESS')}
+                disabled={flightSeats.businessSeatsAvailable === 0 || flight.status !== 'OPEN'}
+                className={`relative bg-blue-50 rounded-lg p-4 text-left transition-all
+                  ${flightSeats.businessSeatsAvailable > 0 && flight.status === 'OPEN'
+                    ? 'hover:bg-blue-100 cursor-pointer' 
+                    : 'opacity-50 cursor-not-allowed'}`}
+              >
                 <div className="absolute top-2 right-2 bg-blue-700 text-white text-xs px-2 py-1 rounded">
                   {flightSeats.businessSeatsAvailable} chỗ còn lại
                 </div>
@@ -250,10 +508,17 @@ const FlightChoose = ({ searchData }) => {
                 <p className="text-xl font-bold text-[#1A1D1F]">
                   {formatCurrency(flightSeats.businessPrice)} <span className="text-sm text-gray-500">VND</span>
                 </p>
-              </div>
+              </button>
 
               {/* First Class */}
-              <div className="relative bg-purple-50 rounded-lg p-4">
+              <button 
+                onClick={() => handleClassSelection(flight, 'FIRST')}
+                disabled={flightSeats.firstSeatsAvailable === 0 || flight.status !== 'OPEN'}
+                className={`relative bg-purple-50 rounded-lg p-4 text-left transition-all
+                  ${flightSeats.firstSeatsAvailable > 0 && flight.status === 'OPEN'
+                    ? 'hover:bg-purple-100 cursor-pointer' 
+                    : 'opacity-50 cursor-not-allowed'}`}
+              >
                 <div className="absolute top-2 right-2 bg-purple-700 text-white text-xs px-2 py-1 rounded">
                   {flightSeats.firstSeatsAvailable} chỗ còn lại
                 </div>
@@ -261,7 +526,7 @@ const FlightChoose = ({ searchData }) => {
                 <p className="text-xl font-bold text-[#1A1D1F]">
                   {formatCurrency(flightSeats.firstPrice)} <span className="text-sm text-gray-500">VND</span>
                 </p>
-              </div>
+              </button>
             </div>
 
             <div className="flex items-center justify-between">
@@ -275,15 +540,6 @@ const FlightChoose = ({ searchData }) => {
                   <div className="font-medium text-[#1A1D1F]">{flight.gate}</div>
                 </div>
               </div>
-              <Link 
-                to={`/flight/${flight.id}`}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#605DEC] text-white hover:bg-[#4B48BF] transition-colors"
-              >
-                <span>Chọn chuyến bay</span>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M4.16669 10H15.8334M15.8334 10L10 4.16667M15.8334 10L10 15.8333" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </Link>
             </div>
           </div>
         </div>
@@ -356,6 +612,16 @@ const FlightChoose = ({ searchData }) => {
       <div className="grid gap-4">
         {sortFlights(flights).map(renderFlightInfo)}
       </div>
+
+      {showPassengerModal && selectedFlight && (
+        <PassengerModal
+          isOpen={showPassengerModal}
+          onClose={() => setShowPassengerModal(false)}
+          flightInfo={selectedFlight}
+          selectedClass={selectedClass}
+          onSubmit={handlePassengerSubmit}
+        />
+      )}
     </div>
   );
 };

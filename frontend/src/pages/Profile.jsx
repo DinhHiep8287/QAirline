@@ -39,9 +39,9 @@ const InputField = ({ icon: Icon, label, type = "text", value, onChange, disable
             className={commonClasses}
           >
             <option value="">Chọn giới tính</option>
-            <option value="male">Nam</option>
-            <option value="female">Nữ</option>
-            <option value="other">Khác</option>
+            <option value="MALE">Nam</option>
+            <option value="FEMALE">Nữ</option>
+            <option value="OTHER">Khác</option>
           </select>
         ) : as === "textarea" ? (
           <textarea
