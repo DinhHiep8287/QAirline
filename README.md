@@ -46,7 +46,7 @@ QAirline là hệ thống quản lý hàng không được xây dựng bằng Sp
    ```
 
 2. Cấu hình cơ sở dữ liệu MySQL:
-   - Tạo cơ sở dữ liệu mới tên 'qairline'
+   - Tạo cơ sở dữ liệu mới tên 'test01'
    - Cập nhật thông tin đăng nhập cơ sở dữ liệu trong file `src/main/resources/application.properties`
 
 3. Build và chạy backend:
