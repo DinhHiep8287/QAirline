@@ -1,7 +1,7 @@
 export const suggestions = [
   { code: 'HAN', name: 'Hà Nội', fullName: 'Sân bay Nội Bài' },
   { code: 'DAD', name: 'Đà Nẵng', fullName: 'Sân bay Quốc tế Đà Nẵng' },
-  { code: 'SGN', name: 'Hồ Chí Minh', fullName: 'Sân bay Tân Sơn Nhất' },
+  { code: 'SGN', name: 'TP.HCM', fullName: 'Sân bay Tân Sơn Nhất' },
   { code: 'PQC', name: 'Phú Quốc', fullName: 'Sân bay Quốc tế Phú Quốc' },
   { code: 'CXR', name: 'Nha Trang', fullName: 'Sân bay Cam Ranh' },
   { code: 'DLI', name: 'Đà Lạt', fullName: 'Sân bay Liên Khương' },

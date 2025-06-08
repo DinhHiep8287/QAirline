@@ -1,17 +1,22 @@
 import { useState, useEffect } from 'react';
 import { FaSearch, FaFilter, FaPlane, FaCalendarAlt, FaMapMarkerAlt, FaClock } from 'react-icons/fa';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
+import { getTransactionsByConditions } from '../services/api';
+import { toast } from 'react-toastify';
+import { useNavigate } from 'react-router-dom';
 
 const BookingCard = ({ booking }) => {
   const getStatusColor = (status) => {
     switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'upcoming':
+      case 'BOOKED':
         return 'bg-blue-100 text-blue-800';
-      case 'cancelled':
+      case 'CANCEL':
         return 'bg-red-100 text-red-800';
+      case 'ONTIME':
+        return 'bg-green-100 text-green-800';
+      case 'DELAY':
+        return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -19,15 +24,24 @@ const BookingCard = ({ booking }) => {
 
   const getStatusText = (status) => {
     switch (status) {
-      case 'completed':
-        return 'Đã hoàn thành';
-      case 'upcoming':
-        return 'Sắp khởi hành';
-      case 'cancelled':
+      case 'BOOKED':
+        return 'Đã đặt';
+      case 'CANCEL':
         return 'Đã hủy';
+      case 'ONTIME':
+        return 'Đã hoàn thành';
+      case 'DELAY':
+        return 'Bị trễ';
       default:
         return 'Không xác định';
     }
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('vi-VN', {
+      style: 'currency',
+      currency: 'VND'
+    }).format(price);
   };
 
   return (
@@ -40,9 +54,9 @@ const BookingCard = ({ booking }) => {
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
-                {booking.from} → {booking.to}
+                {booking.flight?.departure} ({booking.flight?.departureCode}) → {booking.flight?.arrival} ({booking.flight?.arrivalCode})
               </h3>
-              <p className="text-sm text-gray-500">Mã đặt chỗ: {booking.bookingCode}</p>
+              <p className="text-sm text-gray-500">Mã chuyến bay: {booking.flight?.name}</p>
             </div>
           </div>
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(booking.status)}`}>
@@ -56,7 +70,7 @@ const BookingCard = ({ booking }) => {
             <div>
               <p className="text-sm text-gray-500">Ngày khởi hành</p>
               <p className="text-sm font-medium text-gray-900">
-                {format(new Date(booking.departureDate), "dd MMMM yyyy", { locale: vi })}
+                {format(parseISO(booking.flight?.startTime), "dd MMMM yyyy", { locale: vi })}
               </p>
             </div>
           </div>
@@ -64,14 +78,16 @@ const BookingCard = ({ booking }) => {
             <FaClock className="w-5 h-5 text-gray-400" />
             <div>
               <p className="text-sm text-gray-500">Thời gian</p>
-              <p className="text-sm font-medium text-gray-900">{booking.departureTime}</p>
+              <p className="text-sm font-medium text-gray-900">
+                {format(parseISO(booking.flight?.startTime), "HH:mm")} - {format(parseISO(booking.flight?.endTime), "HH:mm")}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <FaMapMarkerAlt className="w-5 h-5 text-gray-400" />
             <div>
               <p className="text-sm text-gray-500">Cổng</p>
-              <p className="text-sm font-medium text-gray-900">{booking.gate}</p>
+              <p className="text-sm font-medium text-gray-900">{booking.flight?.gate || 'N/A'}</p>
             </div>
           </div>
         </div>
@@ -79,8 +95,11 @@ const BookingCard = ({ booking }) => {
         <div className="mt-6 pt-6 border-t border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Tổng giá</p>
-              <p className="text-lg font-semibold text-gray-900">{booking.price.toLocaleString('vi-VN')}₫</p>
+              <p className="text-sm text-gray-500">Ghế</p>
+              <p className="text-sm font-medium text-gray-900">
+                {booking.seat?.name} ({booking.seat?.type})
+              </p>
+              <p className="text-lg font-semibold text-gray-900 mt-1">{formatPrice(booking.price)}</p>
             </div>
             <button className="px-4 py-2 bg-[#F6F6FE] text-[#605DEC] rounded-lg hover:bg-[#605DEC] hover:text-white transition-colors duration-200 text-sm font-medium">
               Xem chi tiết
@@ -95,56 +114,123 @@ const BookingCard = ({ booking }) => {
 const BookingHistory = () => {
   const [bookings, setBookings] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('BOOKED');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // TODO: Replace with actual API call
-    const mockBookings = [
-      {
-        id: 1,
-        bookingCode: 'QB123456',
-        from: 'Hà Nội (HAN)',
-        to: 'TP. HCM (SGN)',
-        departureDate: '2024-03-15',
-        departureTime: '08:30',
-        gate: 'A12',
-        status: 'upcoming',
-        price: 1500000
-      },
-      {
-        id: 2,
-        bookingCode: 'QB789012',
-        from: 'Đà Nẵng (DAD)',
-        to: 'Phú Quốc (PQC)',
-        departureDate: '2024-02-20',
-        departureTime: '15:45',
-        gate: 'B05',
-        status: 'completed',
-        price: 2100000
-      },
-      {
-        id: 3,
-        bookingCode: 'QB345678',
-        from: 'TP. HCM (SGN)',
-        to: 'Hà Nội (HAN)',
-        departureDate: '2024-01-10',
-        departureTime: '10:15',
-        gate: 'C08',
-        status: 'cancelled',
-        price: 1800000
+    const fetchBookings = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Get current date and adjust date range
+        const today = new Date();
+        const sixMonthsAgo = new Date();
+        const sixMonthsFuture = new Date();
+        sixMonthsAgo.setMonth(today.getMonth() - 6);
+        sixMonthsFuture.setMonth(today.getMonth() + 6);
+
+        const formattedDateFrom = format(sixMonthsAgo, 'yyyy-MM-dd');
+        const formattedDateTo = format(sixMonthsFuture, 'yyyy-MM-dd');
+
+        console.log('Fetching user bookings with params:', {
+          flightName: '',
+          dateFrom: formattedDateFrom,
+          dateTo: formattedDateTo,
+          status: filterStatus,
+          page: 0,
+          size: 100
+        });
+
+        try {
+          const response = await getTransactionsByConditions(
+            '', // flightName
+            formattedDateFrom,
+            formattedDateTo,
+            filterStatus,
+            0, // page
+            100 // size
+          );
+
+          console.log('API Response:', response);
+
+          // Filter only transactions that have a user
+          const userBookings = response.data ? response.data.filter(booking => booking.user !== null) : [];
+          setBookings(userBookings);
+
+          if (userBookings.length === 0) {
+            toast.info("Không tìm thấy vé nào trong khoảng thời gian này");
+          }
+        } catch (err) {
+          // If we get a 400 with "Not found", treat it as empty results
+          if (err.response?.status === 400 && err.response?.data === "Not found") {
+            setBookings([]);
+            toast.info("Không tìm thấy vé nào trong khoảng thời gian này");
+            return;
+          }
+          throw err; // Re-throw other errors to be handled by outer catch
+        }
+      } catch (err) {
+        console.error("Error fetching bookings:", err);
+        console.error("Error details:", {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status
+        });
+
+        // Handle token expiration
+        if (err.response?.status === 401 || err.response?.status === 403) {
+          toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+          localStorage.removeItem('token');
+          navigate('/login');
+          return;
+        }
+
+        const errorMessage = err.response?.data?.message || "Đã có lỗi xảy ra khi tải lịch sử đặt vé";
+        setError(errorMessage);
+        toast.error(errorMessage);
+      } finally {
+        setLoading(false);
       }
-    ];
-    setBookings(mockBookings);
-  }, []);
+    };
+
+    fetchBookings();
+  }, [filterStatus, navigate]);
 
   const filteredBookings = bookings.filter(booking => {
-    const matchesSearch = booking.bookingCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         booking.from.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         booking.to.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || booking.status === filterStatus;
-    return matchesSearch && matchesFilter;
+    const matchesSearch = 
+      booking.flight?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.flight?.departure?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.flight?.arrival?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.flight?.departureCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      booking.flight?.arrivalCode?.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesSearch;
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#605DEC]"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-red-50 p-6 rounded-xl border border-red-200 max-w-md">
+          <div className="flex items-center gap-3">
+            <svg className="w-6 h-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <div className="text-red-700 font-medium">{error}</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -159,7 +245,7 @@ const BookingHistory = () => {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Tìm kiếm đặt vé..."
+                  placeholder="Tìm kiếm vé..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full md:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#605DEC] focus:border-[#605DEC]"
@@ -180,44 +266,33 @@ const BookingHistory = () => {
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-10">
                     <button
                       onClick={() => {
-                        setFilterStatus('all');
+                        setFilterStatus('BOOKED');
                         setIsFilterOpen(false);
                       }}
                       className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
-                        filterStatus === 'all' ? 'text-[#605DEC] font-medium' : 'text-gray-700'
+                        filterStatus === 'BOOKED' ? 'text-[#605DEC] font-medium' : 'text-gray-700'
                       }`}
                     >
-                      Tất cả
+                      Đã đặt
                     </button>
                     <button
                       onClick={() => {
-                        setFilterStatus('upcoming');
+                        setFilterStatus('ONTIME');
                         setIsFilterOpen(false);
                       }}
                       className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
-                        filterStatus === 'upcoming' ? 'text-[#605DEC] font-medium' : 'text-gray-700'
-                      }`}
-                    >
-                      Sắp khởi hành
-                    </button>
-                    <button
-                      onClick={() => {
-                        setFilterStatus('completed');
-                        setIsFilterOpen(false);
-                      }}
-                      className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
-                        filterStatus === 'completed' ? 'text-[#605DEC] font-medium' : 'text-gray-700'
+                        filterStatus === 'ONTIME' ? 'text-[#605DEC] font-medium' : 'text-gray-700'
                       }`}
                     >
                       Đã hoàn thành
                     </button>
                     <button
                       onClick={() => {
-                        setFilterStatus('cancelled');
+                        setFilterStatus('CANCEL');
                         setIsFilterOpen(false);
                       }}
                       className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-50 ${
-                        filterStatus === 'cancelled' ? 'text-[#605DEC] font-medium' : 'text-gray-700'
+                        filterStatus === 'CANCEL' ? 'text-[#605DEC] font-medium' : 'text-gray-700'
                       }`}
                     >
                       Đã hủy
@@ -228,16 +303,14 @@ const BookingHistory = () => {
             </div>
           </div>
 
-          {/* Bookings List */}
+          {/* Booking List */}
           {filteredBookings.length === 0 ? (
-            <div className="text-center py-12">
-              <FaPlane className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy đặt vé nào</h3>
-              <p className="text-gray-500">Thử thay đổi bộ lọc hoặc tìm kiếm với từ khóa khác</p>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+              <p className="text-gray-500">Không tìm thấy vé nào</p>
             </div>
           ) : (
-            <div className="space-y-4">
-              {filteredBookings.map(booking => (
+            <div className="grid gap-6">
+              {filteredBookings.map((booking) => (
                 <BookingCard key={booking.id} booking={booking} />
               ))}
             </div>
@@ -248,4 +321,4 @@ const BookingHistory = () => {
   );
 };
 
-export default BookingHistory; 
+export default BookingHistory;
