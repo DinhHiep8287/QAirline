@@ -263,6 +263,7 @@ const FlightChoose = ({ searchData }) => {
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
   const [showSignin, setShowSignin] = useState(false);
+  const { user } = useAuth();
 
   const calculateAvailableSeats = async (flightId) => {
     try {
@@ -426,6 +427,10 @@ const FlightChoose = ({ searchData }) => {
   };
 
   const handleClassSelection = async (flight, seatClass) => {
+    if (!user) {
+      setShowSignin(true);
+      return;
+    }
     try {
       // Lấy tất cả transactions của chuyến bay
       const transactionsResponse = await getTransactionsByFlight(flight.id);
