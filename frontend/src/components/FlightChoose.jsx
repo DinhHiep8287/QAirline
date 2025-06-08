@@ -8,6 +8,7 @@ import { formatCurrency } from "../utils/format";
 import { FaUser, FaEnvelope, FaPhone, FaCalendar, FaVenusMars, FaMapMarkerAlt } from "react-icons/fa";
 import { MdOutlineClose } from "react-icons/md";
 import { useAuth } from "../contexts/AuthContext";
+import Signin from "../container/Signin";
 
 const PassengerModal = ({ isOpen, onClose, flightInfo, selectedClass, onSubmit, searchData }) => {
   const { user } = useAuth();
@@ -261,6 +262,7 @@ const FlightChoose = ({ searchData }) => {
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedSeats, setSelectedSeats] = useState([]);
+  const [showSignin, setShowSignin] = useState(false);
 
   const calculateAvailableSeats = async (flightId) => {
     try {
@@ -693,6 +695,13 @@ const FlightChoose = ({ searchData }) => {
           selectedClass={selectedClass}
           onSubmit={handlePassengerSubmit}
           searchData={searchData}
+        />
+      )}
+
+      {showSignin && (
+        <Signin
+          setSignin={setShowSignin}
+          setSignup={() => {}}
         />
       )}
     </div>
