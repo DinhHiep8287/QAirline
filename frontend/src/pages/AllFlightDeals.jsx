@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { getNewsByCategory } from '../services/api';
 import FlightDealsCard from '../container/FlightDealsCard';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
+import { toast } from 'react-toastify';
+import { MdToday } from 'react-icons/md';
 
 const AllFlightDeals = () => {
   const navigate = useNavigate();
@@ -13,8 +16,11 @@ const AllFlightDeals = () => {
     const fetchDeals = async () => {
       try {
         const response = await getNewsByCategory('FLIGHT_DEAL', 0, 1000);
+        console.log('API Response:', response); // Debug log
         if (response?.data) {
-          setDeals(Array.isArray(response.data) ? response.data : []);
+          const dealsData = Array.isArray(response.data) ? response.data : [];
+          console.log('Deals data:', dealsData); // Debug log
+          setDeals(dealsData);
         }
         setLoading(false);
       } catch (err) {
@@ -28,10 +34,57 @@ const AllFlightDeals = () => {
   }, []);
 
   const handleDealClick = (deal) => {
-    // Lưu thông tin deal vào localStorage hoặc state management
-    localStorage.setItem('selectedDeal', JSON.stringify(deal));
-    // Chuyển đến trang đặt vé
-    navigate('/explore', { state: { dealInfo: deal } });
+    // Debug log
+    console.log('Deal clicked:', deal);
+    
+    // Try to extract cities from summary or title
+    let departure, arrival;
+    
+    if (deal.summary && deal.summary.includes(' - ')) {
+      [departure, arrival] = deal.summary.split(' - ');
+    } else if (deal.title && deal.title.includes(' - ')) {
+      [departure, arrival] = deal.title.split(' - ');
+    } else {
+      console.error('Could not parse cities from deal:', deal);
+      toast.error('Không thể xử lý thông tin chuyến bay');
+      return;
+    }
+    
+    // Debug log
+    console.log('Parsed cities:', { departure, arrival });
+    
+    // Trim any whitespace
+    departure = departure.trim();
+    arrival = arrival.trim();
+    
+    // Remove any "From" prefix if exists
+    departure = departure.replace(/^From\s+/i, '');
+    
+    // Create search URL with default parameters
+    const today = new Date();
+    const startDate = today;
+    
+    // Tính ngày kết thúc là 3 tháng sau ngày hôm nay
+    const endDate = new Date(today);
+    endDate.setMonth(today.getMonth() + 3);
+    
+    // Format dates
+    const formattedStartDate = format(startDate, "yyyy-MM-dd");
+    const formattedEndDate = format(endDate, "yyyy-MM-dd");
+    
+    // Debug logs
+    console.log('Today:', today);
+    console.log('Start Date:', startDate);
+    console.log('End Date:', endDate);
+    console.log('Formatted dates:', { formattedStartDate, formattedEndDate });
+
+    const searchUrl = `/explore?from=${encodeURIComponent(departure)}&to=${encodeURIComponent(arrival)}&startDate=${formattedStartDate}&endDate=${formattedEndDate}&adult=1&minor=0`;
+    
+    // Debug log
+    console.log('Search URL:', searchUrl);
+
+    // Navigate to explore with search parameters
+    navigate(searchUrl);
   };
 
   if (loading) return (

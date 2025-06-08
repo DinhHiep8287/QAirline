@@ -16,8 +16,9 @@ const FlightDealsCard = ({ image, title, name, price, des }) => {
       <div className="p-6">
         <div className="flex flex-col gap-2">
           <h3 className="text-xl font-semibold text-[#6E7491]">
-            {title} <span className="text-[#605DEC]">{name}</span>
+            {title}
           </h3>
+          <p className="text-[#605DEC] font-medium">{name}</p>
           <p className="text-gray-600 text-sm">{des}</p>
         </div>
         <div className="mt-4 flex justify-between items-center">
